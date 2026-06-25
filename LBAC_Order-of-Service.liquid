@@ -1,0 +1,246 @@
+<!--
+LBAC Order of Service Report
+Version 1.0
+
+CURRENTLY DYNAMIC
+- Service Date
+- Worship Leader
+- Song Titles
+- Song of Anticipation Arrangement Name
+
+CURRENTLY HARD CODED
+- Theme/Greeting
+- Mission's Moment
+- Prayer for the Church/Offering
+- Message
+- Announcements/Benediction
+- Service Notes
+
+FUTURE IMPLEMENTATION IDEAS
+
+Message Title:
+{{ plan.plan_title }}
+
+Preacher:
+Lookup plan person assigned to position "Preacher"
+
+Prayer Leader:
+Lookup plan person assigned to position "Prayer"
+
+Mission's Moment:
+Lookup plan person assigned to position "Mission's Moment"
+
+Announcements/Benediction:
+Lookup plan person assigned to position "Announcements"
+
+Potential future improvement:
+Use a dedicated note category instead of Description
+to identify:
+- Song of Anticipation
+- Mission's Moment
+- Announcements
+- Special Elements
+-->
+
+{% assign worship_leader = "" %}
+
+{% for plan_person in plan.plan_people_not_declined %}
+  {% if plan_person.position == "Worship Leader" %}
+    {% assign worship_leader = plan_person.person.name %}
+  {% endif %}
+{% endfor %}
+
+{% assign song_count = 0 %}
+{% assign anticipation_found = false %}
+{% assign anticipation_title = "" %}
+{% assign anticipation_arrangement = "" %}
+{% assign response_title = "" %}
+
+
+{% for item in plan.items %}
+  {% if item.song or item.arrangement %}
+
+    {% assign song_count = song_count | plus: 1 %}
+
+    {% if item.description contains "Song of Anticipation" %}
+      {% assign anticipation_found = true %}
+      {% assign anticipation_title = item.title %}
+      {% if item.arrangement %}
+        {% assign anticipation_arrangement = item.arrangement.name %}
+      {% endif %}
+    {% endif %}
+
+  {% endif %}
+{% endfor %}
+
+
+{% assign last_song_title = "" %}
+
+{% for item in plan.items %}
+  {% if item.song or item.arrangement %}
+    {% assign last_song_title = item.title %}
+  {% endif %}
+{% endfor %}
+
+<html>
+<head>
+<style>
+
+body{
+    font-family: Calibri, Arial, sans-serif;
+    font-size:11pt;
+    margin:0.5in;
+    color:black;
+}
+
+.title{
+    text-align:center;
+    font-size:14pt;
+    font-weight:bold;
+    margin-bottom:18px;
+}
+
+.section{
+    margin-top:10px;
+}
+
+.song{
+    margin-left:36px;
+    font-style:italic;
+}
+
+.subnote{
+    margin-left:36px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="title">
+Order of Service • {{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}
+</div>
+
+<div class="section">
+Prelude • Call to Worship • Recorded Music
+</div>
+
+<br>
+
+<div>
+Worship in Singing • Worship Team
+</div>
+
+{% assign worship_song_count = 0 %}
+
+{% for item in plan.items %}
+  {% if item.song or item.arrangement %}
+
+    {% assign worship_song_count = worship_song_count | plus: 1 %}
+
+    {% if worship_song_count == 1 %}
+      <div class="song">{{ item.title }}</div>
+    {% endif %}
+
+  {% endif %}
+{% endfor %}
+
+<br>
+
+<div>
+{% if worship_leader != "" %}
+Welcome to Worship • {{ worship_leader }}
+{% else %}
+Welcome to Worship •
+{% endif %}
+</div>
+
+<div class="subnote">
+(Theme/Greeting)
+</div>
+
+<br>
+
+<div>
+Songs of Worship • Worship Team
+</div>
+
+{% assign worship_song_count = 0 %}
+
+{% for item in plan.items %}
+  {% if item.song or item.arrangement %}
+
+    {% assign worship_song_count = worship_song_count | plus: 1 %}
+
+    {% if item.title != anticipation_title %}
+      {% if item.title != last_song_title %}
+
+        {% if worship_song_count > 1 %}
+          <div class="song">{{ item.title }}</div>
+        {% endif %}
+
+      {% endif %}
+    {% endif %}
+
+  {% endif %}
+{% endfor %}
+
+<br>
+
+<div>
+Worship in Mission's Moment •
+</div>
+
+<br>
+
+<div>
+Prayer for the Church/Offering •
+</div>
+
+<br>
+
+<div>
+Song of Anticipation • Worship Team
+</div>
+
+{% if anticipation_found %}
+
+  <div class="song">
+    {{ anticipation_title }}
+    {% if anticipation_arrangement != "" %}
+      , {{ anticipation_arrangement }}
+    {% endif %}
+  </div>
+
+{% endif %}
+
+<br>
+
+<div>
+Message: "" •
+</div>
+
+<br>
+
+<div>
+Song of Response • Worship Team
+</div>
+
+<div class="song">
+{{ last_song_title }}
+</div>
+
+<br>
+
+<div>
+Announcements/Benediction •
+</div>
+
+<br><br>
+
+<div>
+Service Notes:
+</div>
+
+</body>
+</html>
