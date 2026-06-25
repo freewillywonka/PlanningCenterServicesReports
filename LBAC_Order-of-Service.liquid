@@ -1,6 +1,6 @@
 <!--
 LBAC Order of Service Report
-Version 1.0
+Version 2.0
 
 CURRENTLY DYNAMIC
 - Service Date
@@ -42,205 +42,186 @@ to identify:
 - Special Elements
 -->
 
+{% comment %}
+Extract key data from plan in a single pass through items
+to improve performance and maintainability.
+{% endcomment %}
+
 {% assign worship_leader = "" %}
+{% assign songs = "" | split: "" %}
+{% assign anticipation_title = "" %}
+{% assign anticipation_arrangement = "" %}
+{% assign last_song_title = "" %}
 
 {% for plan_person in plan.plan_people_not_declined %}
   {% if plan_person.position == "Worship Leader" %}
     {% assign worship_leader = plan_person.person.name %}
+    {% break %}
   {% endif %}
 {% endfor %}
 
-{% assign song_count = 0 %}
-{% assign anticipation_found = false %}
-{% assign anticipation_title = "" %}
-{% assign anticipation_arrangement = "" %}
-{% assign response_title = "" %}
-
-
 {% for item in plan.items %}
   {% if item.song or item.arrangement %}
-
-    {% assign song_count = song_count | plus: 1 %}
-
+    {% assign songs = songs | push: item %}
+    
     {% if item.description contains "Song of Anticipation" %}
-      {% assign anticipation_found = true %}
       {% assign anticipation_title = item.title %}
       {% if item.arrangement %}
         {% assign anticipation_arrangement = item.arrangement.name %}
       {% endif %}
     {% endif %}
-
-  {% endif %}
-{% endfor %}
-
-
-{% assign last_song_title = "" %}
-
-{% for item in plan.items %}
-  {% if item.song or item.arrangement %}
+    
     {% assign last_song_title = item.title %}
   {% endif %}
 {% endfor %}
 
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order of Service</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-body{
-    font-family: Calibri, Arial, sans-serif;
-    font-size:11pt;
-    margin:0.5in;
-    color:black;
-}
+    body {
+      font-family: Calibri, Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      margin: 0.5in;
+      color: #000;
+    }
 
-.title{
-    text-align:center;
-    font-size:14pt;
-    font-weight:bold;
-    margin-bottom:18px;
-}
+    .page-title {
+      text-align: center;
+      font-size: 14pt;
+      font-weight: bold;
+      margin-bottom: 1.25rem;
+    }
 
-.section{
-    margin-top:10px;
-}
+    .service-section {
+      margin-top: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
 
-.song{
-    margin-left:36px;
-    font-style:italic;
-}
+    .section-heading {
+      font-weight: normal;
+    }
 
-.subnote{
-    margin-left:36px;
-}
+    .song-title {
+      margin-left: 2.5rem;
+      font-style: italic;
+    }
 
-</style>
+    .subnote {
+      margin-left: 2.5rem;
+      font-size: 0.95rem;
+      color: #333;
+    }
+
+    .service-notes {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ccc;
+    }
+
+    @media print {
+      body {
+        margin: 0.5in;
+      }
+      .service-section {
+        page-break-inside: avoid;
+      }
+      .song-title {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<div class="title">
-Order of Service • {{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}
-</div>
+  <div class="page-title">
+    Order of Service • {% if plan.plan_times.size > 0 %}{{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}{% endif %}
+  </div>
 
-<div class="section">
-Prelude • Call to Worship • Recorded Music
-</div>
+  <div class="service-section section-heading">
+    Prelude • Call to Worship • Recorded Music
+  </div>
 
-<br>
+  <div class="service-section section-heading">
+    Worship in Singing • Worship Team
+  </div>
 
-<div>
-Worship in Singing • Worship Team
-</div>
-
-{% assign worship_song_count = 0 %}
-
-{% for item in plan.items %}
-  {% if item.song or item.arrangement %}
-
-    {% assign worship_song_count = worship_song_count | plus: 1 %}
-
-    {% if worship_song_count == 1 %}
-      <div class="song">{{ item.title }}</div>
-    {% endif %}
-
+  {% if songs.size > 0 %}
+    <div class="song-title">{{ songs.first.title }}</div>
   {% endif %}
-{% endfor %}
 
-<br>
-
-<div>
-{% if worship_leader != "" %}
-Welcome to Worship • {{ worship_leader }}
-{% else %}
-Welcome to Worship •
-{% endif %}
-</div>
-
-<div class="subnote">
-(Theme/Greeting)
-</div>
-
-<br>
-
-<div>
-Songs of Worship • Worship Team
-</div>
-
-{% assign worship_song_count = 0 %}
-
-{% for item in plan.items %}
-  {% if item.song or item.arrangement %}
-
-    {% assign worship_song_count = worship_song_count | plus: 1 %}
-
-    {% if item.title != anticipation_title %}
-      {% if item.title != last_song_title %}
-
-        {% if worship_song_count > 1 %}
-          <div class="song">{{ item.title }}</div>
-        {% endif %}
-
-      {% endif %}
-    {% endif %}
-
-  {% endif %}
-{% endfor %}
-
-<br>
-
-<div>
-Worship in Mission's Moment •
-</div>
-
-<br>
-
-<div>
-Prayer for the Church/Offering •
-</div>
-
-<br>
-
-<div>
-Song of Anticipation • Worship Team
-</div>
-
-{% if anticipation_found %}
-
-  <div class="song">
-    {{ anticipation_title }}
-    {% if anticipation_arrangement != "" %}
-      , {{ anticipation_arrangement }}
+  <div class="service-section section-heading">
+    {% if worship_leader %}
+      Welcome to Worship • {{ worship_leader }}
+    {% else %}
+      Welcome to Worship •
     {% endif %}
   </div>
 
-{% endif %}
+  <div class="subnote">
+    (Theme/Greeting)
+  </div>
 
-<br>
+  <div class="service-section section-heading">
+    Songs of Worship • Worship Team
+  </div>
 
-<div>
-Message: "" •
-</div>
+  {% for song in songs %}
+    {% if forloop.index > 1 and song.title != anticipation_title and song.title != last_song_title %}
+      <div class="song-title">{{ song.title }}</div>
+    {% endif %}
+  {% endfor %}
 
-<br>
+  <div class="service-section section-heading">
+    Worship in Mission's Moment •
+  </div>
 
-<div>
-Song of Response • Worship Team
-</div>
+  <div class="service-section section-heading">
+    Prayer for the Church/Offering •
+  </div>
 
-<div class="song">
-{{ last_song_title }}
-</div>
+  <div class="service-section section-heading">
+    Song of Anticipation • Worship Team
+  </div>
 
-<br>
+  {% if anticipation_title %}
+    <div class="song-title">
+      {{ anticipation_title }}
+      {% if anticipation_arrangement %}
+        , {{ anticipation_arrangement }}
+      {% endif %}
+    </div>
+  {% endif %}
 
-<div>
-Announcements/Benediction •
-</div>
+  <div class="service-section section-heading">
+    Message: "" •
+  </div>
 
-<br><br>
+  <div class="service-section section-heading">
+    Song of Response • Worship Team
+  </div>
 
-<div>
-Service Notes:
-</div>
+  {% if last_song_title %}
+    <div class="song-title">{{ last_song_title }}</div>
+  {% endif %}
+
+  <div class="service-section section-heading">
+    Announcements/Benediction •
+  </div>
+
+  <div class="service-notes section-heading">
+    Service Notes:
+  </div>
 
 </body>
 </html>
