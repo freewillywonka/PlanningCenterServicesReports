@@ -1,6 +1,6 @@
 <!--
 LBAC Order of Service Report
-Version 2.0
+Version 2.1
 
 CURRENTLY DYNAMIC
 - Service Date
@@ -43,15 +43,15 @@ to identify:
 -->
 
 {% comment %}
-Extract key data from plan in a single pass through items
-to improve performance and maintainability.
+Extract key data from plan.
 {% endcomment %}
 
 {% assign worship_leader = "" %}
-{% assign songs = "" | split: "" %}
 {% assign anticipation_title = "" %}
 {% assign anticipation_arrangement = "" %}
 {% assign last_song_title = "" %}
+{% assign first_song_title = "" %}
+{% assign first_song_found = false %}
 
 {% for plan_person in plan.plan_people_not_declined %}
   {% if plan_person.position == "Worship Leader" %}
@@ -62,7 +62,11 @@ to improve performance and maintainability.
 
 {% for item in plan.items %}
   {% if item.song or item.arrangement %}
-    {% assign songs = songs | push: item %}
+    
+    {% if first_song_found == false %}
+      {% assign first_song_title = item.title %}
+      {% assign first_song_found = true %}
+    {% endif %}
     
     {% if item.description contains "Song of Anticipation" %}
       {% assign anticipation_title = item.title %}
@@ -156,8 +160,8 @@ to improve performance and maintainability.
     Worship in Singing • Worship Team
   </div>
 
-  {% if songs.size > 0 %}
-    <div class="song-title">{{ songs.first.title }}</div>
+  {% if first_song_title %}
+    <div class="song-title">{{ first_song_title }}</div>
   {% endif %}
 
   <div class="service-section section-heading">
@@ -176,9 +180,20 @@ to improve performance and maintainability.
     Songs of Worship • Worship Team
   </div>
 
-  {% for song in songs %}
-    {% if forloop.index > 1 and song.title != anticipation_title and song.title != last_song_title %}
-      <div class="song-title">{{ song.title }}</div>
+  {% assign worship_song_count = 0 %}
+  {% for item in plan.items %}
+    {% if item.song or item.arrangement %}
+      {% assign worship_song_count = worship_song_count | plus: 1 %}
+      
+      {% comment %}
+      Display songs that are:
+      - Not the first song (worship_song_count > 1)
+      - Not the Song of Anticipation
+      - Not the last song (Song of Response)
+      {% endcomment %}
+      {% if worship_song_count > 1 and item.title != anticipation_title and item.title != last_song_title %}
+        <div class="song-title">{{ item.title }}</div>
+      {% endif %}
     {% endif %}
   {% endfor %}
 
