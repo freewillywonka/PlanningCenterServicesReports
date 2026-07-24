@@ -1,45 +1,28 @@
 <!--
 LBAC Order of Service Report
-Version 2.1
+Version 2.2
 
 CURRENTLY DYNAMIC
 - Service Date
 - Worship Leader
 - Song Titles
 - Song of Anticipation Arrangement Name
+- Platform Roles (Preacher, Prayer Leader, Announcements, Benediction, Mission's Moment, Communion Elder)
 
 CURRENTLY HARD CODED
 - Theme/Greeting
-- Mission's Moment
-- Prayer for the Church/Offering
-- Message
-- Announcements/Benediction
 - Service Notes
 
-FUTURE IMPLEMENTATION IDEAS
+PLATFORM ROLES FORMAT (add to Platform Team general note):
+PLATFORM ROLES:
+Preacher: Chris Lankford
+Prayer Leader: TBD
+Communion Elder: ""
+Announcements: Hank McWatters
+Benediction: Hank McWatters
+Mission's Moment: 
 
-Message Title:
-{{ plan.plan_title }}
-
-Preacher:
-Lookup plan person assigned to position "Preacher"
-
-Prayer Leader:
-Lookup plan person assigned to position "Prayer"
-
-Mission's Moment:
-Lookup plan person assigned to position "Mission's Moment"
-
-Announcements/Benediction:
-Lookup plan person assigned to position "Announcements"
-
-Potential future improvement:
-Use a dedicated note category instead of Description
-to identify:
-- Song of Anticipation
-- Mission's Moment
-- Announcements
-- Special Elements
+Note: Use "TBD" or "" (empty quotes) for roles not yet filled. Empty lines or missing roles are omitted from output.
 -->
 
 {% comment %}
@@ -53,6 +36,16 @@ Extract key data from plan.
 {% assign first_song_title = "" %}
 {% assign first_song_found = false %}
 
+{% comment %}
+Initialize platform roles
+{% endcomment %}
+{% assign preacher = "" %}
+{% assign prayer_leader = "" %}
+{% assign communion_elder = "" %}
+{% assign announcements = "" %}
+{% assign benediction = "" %}
+{% assign missions_moment = "" %}
+
 {% for plan_person in plan.plan_people_not_declined %}
   {% if plan_person.position == "Worship Leader" %}
     {% assign worship_leader = plan_person.person.name %}
@@ -60,6 +53,86 @@ Extract key data from plan.
   {% endif %}
 {% endfor %}
 
+{% comment %}
+Extract platform roles from team notes
+{% endcomment %}
+{% for item in plan.items %}
+  {% if item.notes contains "PLATFORM ROLES:" %}
+    {% assign roles_text = item.notes %}
+    
+    {% comment %}
+    Extract Preacher
+    {% endcomment %}
+    {% if roles_text contains "Preacher:" %}
+      {% assign preacher_raw = roles_text | split: "Preacher:" | last | split: "
+" | first | strip %}
+      {% unless preacher_raw == "TBD" or preacher_raw == """" or preacher_raw == "" %}
+        {% assign preacher = preacher_raw %}
+      {% endunless %}
+    {% endif %}
+    
+    {% comment %}
+    Extract Prayer Leader
+    {% endcomment %}
+    {% if roles_text contains "Prayer Leader:" %}
+      {% assign prayer_raw = roles_text | split: "Prayer Leader:" | last | split: "
+" | first | strip %}
+      {% unless prayer_raw == "TBD" or prayer_raw == """" or prayer_raw == "" %}
+        {% assign prayer_leader = prayer_raw %}
+      {% endunless %}
+    {% endif %}
+    
+    {% comment %}
+    Extract Communion Elder
+    {% endcomment %}
+    {% if roles_text contains "Communion Elder:" %}
+      {% assign communion_raw = roles_text | split: "Communion Elder:" | last | split: "
+" | first | strip %}
+      {% unless communion_raw == "TBD" or communion_raw == """" or communion_raw == "" %}
+        {% assign communion_elder = communion_raw %}
+      {% endunless %}
+    {% endif %}
+    
+    {% comment %}
+    Extract Announcements
+    {% endcomment %}
+    {% if roles_text contains "Announcements:" %}
+      {% assign ann_raw = roles_text | split: "Announcements:" | last | split: "
+" | first | strip %}
+      {% unless ann_raw == "TBD" or ann_raw == """" or ann_raw == "" %}
+        {% assign announcements = ann_raw %}
+      {% endunless %}
+    {% endif %}
+    
+    {% comment %}
+    Extract Benediction
+    {% endcomment %}
+    {% if roles_text contains "Benediction:" %}
+      {% assign benediction_raw = roles_text | split: "Benediction:" | last | split: "
+" | first | strip %}
+      {% unless benediction_raw == "TBD" or benediction_raw == """" or benediction_raw == "" %}
+        {% assign benediction = benediction_raw %}
+      {% endunless %}
+    {% endif %}
+    
+    {% comment %}
+    Extract Mission's Moment
+    {% endcomment %}
+    {% if roles_text contains "Mission's Moment:" %}
+      {% assign mission_raw = roles_text | split: "Mission's Moment:" | last | split: "
+" | first | strip %}
+      {% unless mission_raw == "TBD" or mission_raw == """" or mission_raw == "" %}
+        {% assign missions_moment = mission_raw %}
+      {% endunless %}
+    {% endif %}
+    
+    {% break %}
+  {% endif %}
+{% endfor %}
+
+{% comment %}
+Extract song data
+{% endcomment %}
 {% for item in plan.items %}
   {% if item.song or item.arrangement %}
     
@@ -197,13 +270,23 @@ Extract key data from plan.
     {% endif %}
   {% endfor %}
 
-  <div class="service-section section-heading">
-    Worship in Mission's Moment •
-  </div>
+  {% comment %}
+  Conditionally display Mission's Moment section
+  {% endcomment %}
+  {% if missions_moment %}
+    <div class="service-section section-heading">
+      Worship in Mission's Moment • {{ missions_moment }}
+    </div>
+  {% endif %}
 
-  <div class="service-section section-heading">
-    Prayer for the Church/Offering •
-  </div>
+  {% comment %}
+  Conditionally display Prayer for the Church/Offering section
+  {% endcomment %}
+  {% if prayer_leader %}
+    <div class="service-section section-heading">
+      Prayer for the Church/Offering • {{ prayer_leader }}
+    </div>
+  {% endif %}
 
   <div class="service-section section-heading">
     Song of Anticipation • Worship Team
@@ -218,9 +301,14 @@ Extract key data from plan.
     </div>
   {% endif %}
 
-  <div class="service-section section-heading">
-    Message: "" •
-  </div>
+  {% comment %}
+  Conditionally display Message section
+  {% endcomment %}
+  {% if preacher %}
+    <div class="service-section section-heading">
+      Message: "" • {{ preacher }}
+    </div>
+  {% endif %}
 
   <div class="service-section section-heading">
     Song of Response • Worship Team
@@ -230,9 +318,23 @@ Extract key data from plan.
     <div class="song-title">{{ last_song_title }}</div>
   {% endif %}
 
-  <div class="service-section section-heading">
-    Announcements/Benediction •
-  </div>
+  {% comment %}
+  Conditionally display Announcements and/or Benediction
+  {% endcomment %}
+  {% if announcements or benediction or communion_elder %}
+    <div class="service-section section-heading">
+      {% if announcements and benediction %}
+        Announcements/Benediction • {{ announcements }}/{{ benediction }}
+      {% elsif announcements %}
+        Announcements • {{ announcements }}
+      {% elsif benediction %}
+        Benediction • {{ benediction }}
+      {% endif %}
+      {% if communion_elder %}
+        <br>Communion Elder • {{ communion_elder }}
+      {% endif %}
+    </div>
+  {% endif %}
 
   <div class="service-notes section-heading">
     Service Notes:
