@@ -68,304 +68,314 @@ Extract platform roles from plan general note (PLATFORM ROLES:)
 {% for note in plan.notes %}
  {% if note.category_name == "General" and note.note contains "PLATFORM ROLES:" %}
  {% assign roles_text = note.note %}
-    
-    {% comment %}
-    Extract Preacher
-    {% endcomment %}
-    {% if roles_text contains "Preacher:" %}
-      {% assign preacher_found = true %}
-      {% assign preacher_raw = roles_text | split: "Preacher:" | last | split: "
+     
+     {% comment %}
+     Extract Preacher
+     {% endcomment %}
+     {% if roles_text contains "Preacher:" %}
+       {% assign preacher_found = true %}
+       {% assign preacher_raw = roles_text | split: "Preacher:" | last | split: "
 " | first | strip %}
-      {% if preacher_raw == "TBD" or preacher_raw == """" or preacher_raw == "" %}
-        {% assign preacher = '""' %}
-      {% else %}
-        {% assign preacher = preacher_raw %}
-      {% endif %}
-    {% endif %}
-    
-    {% comment %}
-    Extract Prayer Leader
-    {% endcomment %}
-    {% if roles_text contains "Prayer Leader:" %}
-      {% assign prayer_leader_found = true %}
-      {% assign prayer_raw = roles_text | split: "Prayer Leader:" | last | split: "
+       {% if preacher_raw == "TBD" or preacher_raw == """" or preacher_raw == "" %}
+         {% assign preacher = '""' %}
+       {% else %}
+         {% assign preacher = preacher_raw %}
+       {% endif %}
+     {% endif %}
+     
+     {% comment %}
+     Extract Prayer Leader
+     {% endcomment %}
+     {% if roles_text contains "Prayer Leader:" %}
+       {% assign prayer_leader_found = true %}
+       {% assign prayer_raw = roles_text | split: "Prayer Leader:" | last | split: "
 " | first | strip %}
-      {% if prayer_raw == "TBD" or prayer_raw == """" or prayer_raw == "" %}
-        {% assign prayer_leader = '""' %}
-      {% else %}
-        {% assign prayer_leader = prayer_raw %}
-      {% endif %}
-    {% endif %}
-    
-    {% comment %}
-    Extract Communion Elder
-    {% endcomment %}
-    {% if roles_text contains "Communion Elder:" %}
-      {% assign communion_elder_found = true %}
-      {% assign communion_raw = roles_text | split: "Communion Elder:" | last | split: "
+       {% if prayer_raw == "TBD" or prayer_raw == """" or prayer_raw == "" %}
+         {% assign prayer_leader = '""' %}
+       {% else %}
+         {% assign prayer_leader = prayer_raw %}
+       {% endif %}
+     {% endif %}
+     
+     {% comment %}
+     Extract Communion Elder
+     {% endcomment %}
+     {% if roles_text contains "Communion Elder:" %}
+       {% assign communion_elder_found = true %}
+       {% assign communion_raw = roles_text | split: "Communion Elder:" | last | split: "
 " | first | strip %}
-      {% if communion_raw == "TBD" or communion_raw == """" or communion_raw == "" %}
-        {% assign communion_elder = '""' %}
-      {% else %}
-        {% assign communion_elder = communion_raw %}
-      {% endif %}
-    {% endif %}
-    
-    {% comment %}
-    Extract Announcements
-    {% endcomment %}
-    {% if roles_text contains "Announcements:" %}
-      {% assign announcements_found = true %}
-      {% assign ann_raw = roles_text | split: "Announcements:" | last | split: "
+       {% if communion_raw == "TBD" or communion_raw == """" or communion_raw == "" %}
+         {% assign communion_elder = '""' %}
+       {% else %}
+         {% assign communion_elder = communion_raw %}
+       {% endif %}
+     {% endif %}
+     
+     {% comment %}
+     Extract Announcements
+     {% endcomment %}
+     {% if roles_text contains "Announcements:" %}
+       {% assign announcements_found = true %}
+       {% assign ann_raw = roles_text | split: "Announcements:" | last | split: "
 " | first | strip %}
-      {% if ann_raw == "TBD" or ann_raw == """" or ann_raw == "" %}
-        {% assign announcements = '""' %}
-      {% else %}
-        {% assign announcements = ann_raw %}
-      {% endif %}
-    {% endif %}
-    
-    {% comment %}
-    Extract Benediction
-    {% endcomment %}
-    {% if roles_text contains "Benediction:" %}
-      {% assign benediction_found = true %}
-      {% assign benediction_raw = roles_text | split: "Benediction:" | last | split: "
+       {% if ann_raw == "TBD" or ann_raw == """" or ann_raw == "" %}
+         {% assign announcements = '""' %}
+       {% else %}
+         {% assign announcements = ann_raw %}
+       {% endif %}
+     {% endif %}
+     
+     {% comment %}
+     Extract Benediction
+     {% endcomment %}
+     {% if roles_text contains "Benediction:" %}
+       {% assign benediction_found = true %}
+       {% assign benediction_raw = roles_text | split: "Benediction:" | last | split: "
 " | first | strip %}
-      {% if benediction_raw == "TBD" or benediction_raw == """" or benediction_raw == "" %}
-        {% assign benediction = '""' %}
-      {% else %}
-        {% assign benediction = benediction_raw %}
-      {% endif %}
-    {% endif %}
-    
-    {% comment %}
-    Extract Mission's Moment
-    {% endcomment %}
-    {% if roles_text contains "Mission's Moment:" %}
-      {% assign missions_moment_found = true %}
-      {% assign mission_raw = roles_text | split: "Mission's Moment:" | last | split: "
+       {% if benediction_raw == "TBD" or benediction_raw == """" or benediction_raw == "" %}
+         {% assign benediction = '""' %}
+       {% else %}
+         {% assign benediction = benediction_raw %}
+       {% endif %}
+     {% endif %}
+     
+     {% comment %}
+     Extract Mission's Moment
+     {% endcomment %}
+     {% if roles_text contains "Mission's Moment:" %}
+       {% assign missions_moment_found = true %}
+       {% assign mission_raw = roles_text | split: "Mission's Moment:" | last | split: "
 " | first | strip %}
-      {% if mission_raw == "TBD" or mission_raw == """" or mission_raw == "" %}
-        {% assign missions_moment = '""' %}
-      {% else %}
-        {% assign missions_moment = mission_raw %}
-      {% endif %}
-    {% endif %}
-    
-    {% break %}
-  {% endif %}
+       {% if mission_raw == "TBD" or mission_raw == """" or mission_raw == "" %}
+         {% assign missions_moment = '""' %}
+       {% else %}
+         {% assign missions_moment = mission_raw %}
+       {% endif %}
+     {% endif %}
+     
+     {% break %}
+   {% endif %}
 {% endfor %}
 
 {% comment %}
 Extract song data
 {% endcomment %}
 {% for item in plan.items %}
-  {% if item.song or item.arrangement %}
-    
-    {% if first_song_found == false %}
-      {% assign first_song_title = item.title %}
-      {% assign first_song_found = true %}
-    {% endif %}
-    
-    {% if item.description contains "Song of Anticipation" %}
-      {% assign anticipation_title = item.title %}
-      {% if item.arrangement %}
-        {% assign anticipation_arrangement = item.arrangement.name %}
-      {% endif %}
-    {% endif %}
-    
-    {% assign last_song_title = item.title %}
-  {% endif %}
+   {% if item.song or item.arrangement %}
+     
+     {% if first_song_found == false %}
+       {% assign first_song_title = item.title %}
+       {% assign first_song_found = true %}
+     {% endif %}
+     
+     {% if item.description contains "Song of Anticipation" %}
+       {% assign anticipation_title = item.title %}
+       {% if item.arrangement %}
+         {% assign anticipation_arrangement = item.arrangement.name %}
+       {% endif %}
+     {% endif %}
+     
+     {% assign last_song_title = item.title %}
+   {% endif %}
 {% endfor %}
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order of Service</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Order of Service</title>
+   <style>
+     * {
+       margin: 0;
+       padding: 0;
+       box-sizing: border-box;
+     }
 
-    body {
-      font-family: Calibri, Arial, sans-serif;
-      font-size: 11pt;
-      line-height: 1.5;
-      margin: 0.5in;
-      color: #000;
-    }
+     body {
+       font-family: Calibri, Arial, sans-serif;
+       font-size: 11pt;
+       line-height: 1.5;
+       margin: 0.5in;
+       color: #000;
+     }
 
-    .page-title {
-      text-align: center;
-      font-size: 14pt;
-      font-weight: bold;
-      margin-bottom: 1.25rem;
-    }
+     .page-title {
+       text-align: center;
+       font-size: 14pt;
+       font-weight: bold;
+       margin-bottom: 1.25rem;
+     }
 
-    .service-section {
-      margin-top: 0.75rem;
-      margin-bottom: 0.75rem;
-    }
+     .service-section {
+       margin-top: 0.75rem;
+       margin-bottom: 0.75rem;
+     }
 
-    .section-heading {
-      font-weight: normal;
-    }
+     .section-heading {
+       font-weight: normal;
+     }
 
-    .song-title {
-      margin-left: 2.5rem;
-      font-style: italic;
-    }
+     .song-title {
+       margin-left: 2.5rem;
+       font-style: italic;
+     }
 
-    .subnote {
-      margin-left: 2.5rem;
-      font-size: 0.95rem;
-      color: #333;
-    }
+     .subnote {
+       margin-left: 2.5rem;
+       font-size: 0.95rem;
+       color: #333;
+     }
 
-    .service-notes {
-      margin-top: 1.5rem;
-      padding-top: 1rem;
-      border-top: 1px solid #ccc;
-    }
+     .service-notes {
+       margin-top: 1.5rem;
+       padding-top: 1rem;
+       border-top: 1px solid #ccc;
+     }
 
-    @media print {
-      body {
-        margin: 0.5in;
-      }
-      .service-section {
-        page-break-inside: avoid;
-      }
-      .song-title {
-        page-break-inside: avoid;
-      }
-    }
-  </style>
+     @media print {
+       body {
+         margin: 0.5in;
+       }
+       .service-section {
+         page-break-inside: avoid;
+       }
+       .song-title {
+         page-break-inside: avoid;
+       }
+     }
+   </style>
 </head>
 <body>
 
-  <div class="page-title">
-    Order of Service • {% if plan.plan_times.size > 0 %}{{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}{% endif %}
-  </div>
+   <div class="page-title">
+     Order of Service • {% if plan.plan_times.size > 0 %}{{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}{% endif %}
+   </div>
 
-  <div class="service-section section-heading">
-    Prelude • Call to Worship • Recorded Music
-  </div>
+   <div class="service-section section-heading">
+     Prelude • Call to Worship • Recorded Music
+   </div>
 
-  <div class="service-section section-heading">
-    Worship in Singing • Worship Team
-  </div>
+   <div class="service-section section-heading">
+     Worship in Singing • Worship Team
+   </div>
 
-  {% if first_song_title %}
-    <div class="song-title">{{ first_song_title }}</div>
-  {% endif %}
+   {% if first_song_title %}
+     <div class="song-title">{{ first_song_title }}</div>
+   {% endif %}
 
-  <div class="service-section section-heading">
-    {% if worship_leader %}
-      Welcome to Worship • {{ worship_leader }}
-    {% else %}
-      Welcome to Worship •
-    {% endif %}
-  </div>
+   <div class="service-section section-heading">
+     {% if worship_leader %}
+       Welcome to Worship • {{ worship_leader }}
+     {% else %}
+       Welcome to Worship •
+     {% endif %}
+   </div>
 
-  <div class="subnote">
-    (Theme/Greeting)
-  </div>
+   <div class="subnote">
+     (Theme/Greeting)
+   </div>
 
-  <div class="service-section section-heading">
-    Songs of Worship • Worship Team
-  </div>
+   <div class="service-section section-heading">
+     Songs of Worship • Worship Team
+   </div>
 
-  {% assign worship_song_count = 0 %}
-  {% for item in plan.items %}
-    {% if item.song or item.arrangement %}
-      {% assign worship_song_count = worship_song_count | plus: 1 %}
-      
-      {% comment %}
-      Display songs that are:
-      - Not the first song (worship_song_count > 1)
-      - Not the Song of Anticipation
-      - Not the last song (Song of Response)
-      {% endcomment %}
-      {% if worship_song_count > 1 and item.title != anticipation_title and item.title != last_song_title %}
-        <div class="song-title">{{ item.title }}</div>
-      {% endif %}
-    {% endif %}
-  {% endfor %}
+   {% assign worship_song_count = 0 %}
+   {% for item in plan.items %}
+     {% if item.song or item.arrangement %}
+       {% assign worship_song_count = worship_song_count | plus: 1 %}
+       
+       {% comment %}
+       Display songs that are:
+       - Not the first song (worship_song_count > 1)
+       - Not the Song of Anticipation
+       - Not the last song (Song of Response)
+       {% endcomment %}
+       {% if worship_song_count > 1 and item.title != anticipation_title and item.title != last_song_title %}
+         <div class="song-title">{{ item.title }}</div>
+       {% endif %}
+     {% endif %}
+   {% endfor %}
 
-  {% comment %}
-  Display Mission's Moment section only if found in notes
-  {% endcomment %}
-  {% if missions_moment_found %}
-    <div class="service-section section-heading">
-      Worship in Mission's Moment • {{ missions_moment }}
-    </div>
-  {% endif %}
+   {% comment %}
+   Display Mission's Moment section only if found in notes
+   {% endcomment %}
+   {% if missions_moment_found %}
+     <div class="service-section section-heading">
+       Worship in Mission's Moment • {{ missions_moment }}
+     </div>
+   {% endif %}
 
-  {% comment %}
-  Display Prayer for the Church/Offering section only if found in notes
-  {% endcomment %}
-  {% if prayer_leader_found %}
-    <div class="service-section section-heading">
-      Prayer for the Church/Offering • {{ prayer_leader }}
-    </div>
-  {% endif %}
+   {% comment %}
+   Display Prayer for the Church/Offering section only if found in notes
+   {% endcomment %}
+   {% if prayer_leader_found %}
+     <div class="service-section section-heading">
+       Prayer for the Church/Offering • {{ prayer_leader }}
+     </div>
+   {% endif %}
 
-  <div class="service-section section-heading">
-    Song of Anticipation • Worship Team
-  </div>
+   <div class="service-section section-heading">
+     Song of Anticipation • Worship Team
+   </div>
 
-  {% if anticipation_title %}
-    <div class="song-title">
-      {{ anticipation_title }}
-      {% if anticipation_arrangement %}
-        , {{ anticipation_arrangement }}
-      {% endif %}
-    </div>
-  {% endif %}
+   {% if anticipation_title %}
+     <div class="song-title">
+       {{ anticipation_title }}
+       {% if anticipation_arrangement %}
+         , {{ anticipation_arrangement }}
+       {% endif %}
+     </div>
+   {% endif %}
 
-  {% comment %}
-  Display Message section only if found in notes
-  {% endcomment %}
-  {% if preacher_found %}
-    <div class="service-section section-heading">
-      Message: "" • {{ preacher }}
-    </div>
-  {% endif %}
+   {% comment %}
+   Display Message section only if found in notes
+   {% endcomment %}
+   {% if preacher_found %}
+     <div class="service-section section-heading">
+       Message: "" • {{ preacher }}
+     </div>
+   {% endif %}
 
-  <div class="service-section section-heading">
-    Song of Response • Worship Team
-  </div>
+   {% comment %}
+   Display Communion Elder section only if found in notes
+   {% endcomment %}
+   {% if communion_elder_found %}
+     <div class="service-section section-heading">
+       Communion Elder • {{ communion_elder }}
+     </div>
+   {% endif %}
 
-  {% if last_song_title %}
-    <div class="song-title">{{ last_song_title }}</div>
-  {% endif %}
+   <div class="service-section section-heading">
+     Song of Response • Worship Team
+   </div>
 
-  {% comment %}
-  Display Announcements/Benediction section only if at least one is found in notes
-  {% endcomment %}
-  {% if announcements_found or benediction_found or communion_elder_found %}
-    <div class="service-section section-heading">
-      {% if announcements_found and benediction_found %}
-        Announcements/Benediction • {{ announcements }}/{{ benediction }}
-      {% elsif announcements_found %}
-        Announcements • {{ announcements }}
-      {% elsif benediction_found %}
-        Benediction • {{ benediction }}
-      {% endif %}
-      {% if communion_elder_found %}
-        <br>Communion Elder • {{ communion_elder }}
-      {% endif %}
-    </div>
-  {% endif %}
+   {% if last_song_title %}
+     <div class="song-title">{{ last_song_title }}</div>
+   {% endif %}
 
-  <div class="service-notes section-heading">
-    Service Notes:
-  </div>
+   {% comment %}
+   Display Announcements/Benediction section only if at least one is found in notes
+   {% endcomment %}
+   {% if announcements_found or benediction_found %}
+     <div class="service-section section-heading">
+       {% if announcements_found and benediction_found %}
+         {% if announcements == benediction %}
+           Announcements/Benediction • {{ announcements }}
+         {% else %}
+           Announcements/Benediction • {{ announcements }}/{{ benediction }}
+         {% endif %}
+       {% elsif announcements_found %}
+         Announcements • {{ announcements }}
+       {% elsif benediction_found %}
+         Benediction • {{ benediction }}
+       {% endif %}
+     </div>
+   {% endif %}
 
-</body>
+   <div class="service-notes section-heading">
+     Service Notes:
+   </div>
+
+ </body>
 </html>
