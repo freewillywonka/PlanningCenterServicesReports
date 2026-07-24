@@ -360,7 +360,7 @@ Extract song data
    {% if announcements_found or benediction_found %}
      <div class="service-section section-heading">
        {% if announcements_found and benediction_found %}
-         {% if announcements == benediction %}
+         {% if announcements | strip == benediction | strip %}
            Announcements/Benediction • {{ announcements }}
          {% else %}
            Announcements/Benediction • {{ announcements }}/{{ benediction }}
