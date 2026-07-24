@@ -63,11 +63,11 @@ Flags indicate whether the role was found in the notes at all
 {% endfor %}
 
 {% comment %}
-Extract platform roles from team notes
+Extract platform roles from plan general note (PLATFORM ROLES:)
 {% endcomment %}
-{% for item in plan.items %}
-  {% if item.notes contains "PLATFORM ROLES:" %}
-    {% assign roles_text = item.notes %}
+{% for note in plan.notes %}
+ {% if note.category_name == "General" and note.note contains "PLATFORM ROLES:" %}
+ {% assign roles_text = note.note %}
     
     {% comment %}
     Extract Preacher
