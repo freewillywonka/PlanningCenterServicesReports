@@ -1,6 +1,6 @@
 <!--
 LBAC Order of Service Report
-Version 2.2
+Version 2.3
 
 CURRENTLY DYNAMIC
 - Service Date
@@ -22,7 +22,9 @@ Announcements: Hank McWatters
 Benediction: Hank McWatters
 Mission's Moment: 
 
-Note: Use "TBD" or "" (empty quotes) for roles not yet filled. Empty lines or missing roles are omitted from output.
+IMPORTANT DISTINCTION:
+- If a role title is NOT in the notes, that section won't appear in the output (the role isn't happening that week)
+- If a role title IS in the notes but value is blank, TBD, or "", the section displays with "" to show it needs to be filled
 -->
 
 {% comment %}
@@ -38,13 +40,20 @@ Extract key data from plan.
 
 {% comment %}
 Initialize platform roles
+Flags indicate whether the role was found in the notes at all
 {% endcomment %}
 {% assign preacher = "" %}
+{% assign preacher_found = false %}
 {% assign prayer_leader = "" %}
+{% assign prayer_leader_found = false %}
 {% assign communion_elder = "" %}
+{% assign communion_elder_found = false %}
 {% assign announcements = "" %}
+{% assign announcements_found = false %}
 {% assign benediction = "" %}
+{% assign benediction_found = false %}
 {% assign missions_moment = "" %}
+{% assign missions_moment_found = false %}
 
 {% for plan_person in plan.plan_people_not_declined %}
   {% if plan_person.position == "Worship Leader" %}
@@ -64,66 +73,84 @@ Extract platform roles from team notes
     Extract Preacher
     {% endcomment %}
     {% if roles_text contains "Preacher:" %}
+      {% assign preacher_found = true %}
       {% assign preacher_raw = roles_text | split: "Preacher:" | last | split: "
 " | first | strip %}
-      {% unless preacher_raw == "TBD" or preacher_raw == """" or preacher_raw == "" %}
+      {% if preacher_raw == "TBD" or preacher_raw == """" or preacher_raw == "" %}
+        {% assign preacher = '""' %}
+      {% else %}
         {% assign preacher = preacher_raw %}
-      {% endunless %}
+      {% endif %}
     {% endif %}
     
     {% comment %}
     Extract Prayer Leader
     {% endcomment %}
     {% if roles_text contains "Prayer Leader:" %}
+      {% assign prayer_leader_found = true %}
       {% assign prayer_raw = roles_text | split: "Prayer Leader:" | last | split: "
 " | first | strip %}
-      {% unless prayer_raw == "TBD" or prayer_raw == """" or prayer_raw == "" %}
+      {% if prayer_raw == "TBD" or prayer_raw == """" or prayer_raw == "" %}
+        {% assign prayer_leader = '""' %}
+      {% else %}
         {% assign prayer_leader = prayer_raw %}
-      {% endunless %}
+      {% endif %}
     {% endif %}
     
     {% comment %}
     Extract Communion Elder
     {% endcomment %}
     {% if roles_text contains "Communion Elder:" %}
+      {% assign communion_elder_found = true %}
       {% assign communion_raw = roles_text | split: "Communion Elder:" | last | split: "
 " | first | strip %}
-      {% unless communion_raw == "TBD" or communion_raw == """" or communion_raw == "" %}
+      {% if communion_raw == "TBD" or communion_raw == """" or communion_raw == "" %}
+        {% assign communion_elder = '""' %}
+      {% else %}
         {% assign communion_elder = communion_raw %}
-      {% endunless %}
+      {% endif %}
     {% endif %}
     
     {% comment %}
     Extract Announcements
     {% endcomment %}
     {% if roles_text contains "Announcements:" %}
+      {% assign announcements_found = true %}
       {% assign ann_raw = roles_text | split: "Announcements:" | last | split: "
 " | first | strip %}
-      {% unless ann_raw == "TBD" or ann_raw == """" or ann_raw == "" %}
+      {% if ann_raw == "TBD" or ann_raw == """" or ann_raw == "" %}
+        {% assign announcements = '""' %}
+      {% else %}
         {% assign announcements = ann_raw %}
-      {% endunless %}
+      {% endif %}
     {% endif %}
     
     {% comment %}
     Extract Benediction
     {% endcomment %}
     {% if roles_text contains "Benediction:" %}
+      {% assign benediction_found = true %}
       {% assign benediction_raw = roles_text | split: "Benediction:" | last | split: "
 " | first | strip %}
-      {% unless benediction_raw == "TBD" or benediction_raw == """" or benediction_raw == "" %}
+      {% if benediction_raw == "TBD" or benediction_raw == """" or benediction_raw == "" %}
+        {% assign benediction = '""' %}
+      {% else %}
         {% assign benediction = benediction_raw %}
-      {% endunless %}
+      {% endif %}
     {% endif %}
     
     {% comment %}
     Extract Mission's Moment
     {% endcomment %}
     {% if roles_text contains "Mission's Moment:" %}
+      {% assign missions_moment_found = true %}
       {% assign mission_raw = roles_text | split: "Mission's Moment:" | last | split: "
 " | first | strip %}
-      {% unless mission_raw == "TBD" or mission_raw == """" or mission_raw == "" %}
+      {% if mission_raw == "TBD" or mission_raw == """" or mission_raw == "" %}
+        {% assign missions_moment = '""' %}
+      {% else %}
         {% assign missions_moment = mission_raw %}
-      {% endunless %}
+      {% endif %}
     {% endif %}
     
     {% break %}
@@ -271,18 +298,18 @@ Extract song data
   {% endfor %}
 
   {% comment %}
-  Conditionally display Mission's Moment section
+  Display Mission's Moment section only if found in notes
   {% endcomment %}
-  {% if missions_moment %}
+  {% if missions_moment_found %}
     <div class="service-section section-heading">
       Worship in Mission's Moment • {{ missions_moment }}
     </div>
   {% endif %}
 
   {% comment %}
-  Conditionally display Prayer for the Church/Offering section
+  Display Prayer for the Church/Offering section only if found in notes
   {% endcomment %}
-  {% if prayer_leader %}
+  {% if prayer_leader_found %}
     <div class="service-section section-heading">
       Prayer for the Church/Offering • {{ prayer_leader }}
     </div>
@@ -302,9 +329,9 @@ Extract song data
   {% endif %}
 
   {% comment %}
-  Conditionally display Message section
+  Display Message section only if found in notes
   {% endcomment %}
-  {% if preacher %}
+  {% if preacher_found %}
     <div class="service-section section-heading">
       Message: "" • {{ preacher }}
     </div>
@@ -319,18 +346,18 @@ Extract song data
   {% endif %}
 
   {% comment %}
-  Conditionally display Announcements and/or Benediction
+  Display Announcements/Benediction section only if at least one is found in notes
   {% endcomment %}
-  {% if announcements or benediction or communion_elder %}
+  {% if announcements_found or benediction_found or communion_elder_found %}
     <div class="service-section section-heading">
-      {% if announcements and benediction %}
+      {% if announcements_found and benediction_found %}
         Announcements/Benediction • {{ announcements }}/{{ benediction }}
-      {% elsif announcements %}
+      {% elsif announcements_found %}
         Announcements • {{ announcements }}
-      {% elsif benediction %}
+      {% elsif benediction_found %}
         Benediction • {{ benediction }}
       {% endif %}
-      {% if communion_elder %}
+      {% if communion_elder_found %}
         <br>Communion Elder • {{ communion_elder }}
       {% endif %}
     </div>
