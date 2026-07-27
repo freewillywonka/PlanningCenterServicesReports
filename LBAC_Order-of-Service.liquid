@@ -116,8 +116,8 @@ Extract platform roles from plan general note (PLATFORM ROLES:)
       {% endcomment %}
       {% if roles_text contains "Announcements:" %}
         {% assign announcements_found = true %}
-        {% assign ann_raw = roles_text | split: "Announcements:" | last | split: "
-" | first | strip %}
+        {% assign ann_raw = roles_text | split: "Announcements:" | last | split: "Benediction:" | first | strip | replace: "
+", "" %}
         {% if ann_raw == "TBD" or ann_raw == """" or ann_raw == "" %}
           {% assign announcements = '""' %}
         {% else %}
@@ -130,8 +130,8 @@ Extract platform roles from plan general note (PLATFORM ROLES:)
       {% endcomment %}
       {% if roles_text contains "Benediction:" %}
         {% assign benediction_found = true %}
-        {% assign benediction_raw = roles_text | split: "Benediction:" | last | split: "
-" | first | strip %}
+        {% assign benediction_raw = roles_text | split: "Benediction:" | last | split: "Mission's Moment:" | first | strip | replace: "
+", "" %}
         {% if benediction_raw == "TBD" or benediction_raw == """" or benediction_raw == "" %}
           {% assign benediction = '""' %}
         {% else %}
