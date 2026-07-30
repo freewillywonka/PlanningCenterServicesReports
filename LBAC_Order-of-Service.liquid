@@ -1,569 +1,76 @@
-<!--
-LBAC Order of Service Report
-Version 3.0
+<--LBAC Order of Service Report
+Version 4.0
+
+PURPOSE
+- Generate a one-page Order of Service from a Planning Center Services plan.
+
+REPORT STRUCTURE
+- Order of Service
+- Service Notes
+
+DYNAMIC CONTENT
+- Service Date
+- Plan Title
+- Platform Assignments
+- Song Titles
+- Song of Anticipation Arrangement
+
+HARD-CODED CONTENT
+- Prelude • Call to Worship • Recorded Music
+- Worship Team labels
+- Theme/Greeting placeholder
+- Service Notes heading
+- Song of Anticipation is always the second-to-last song.
+
+PLANNING CENTER SETUP
+
+Platform Team Positions
+- Worship Leader
+- Prayer Leader
+- Preacher
+- Announcements
+- Benediction
+
+General Note Format
+
+PLATFORM ROLES:
+Preacher:
+Prayer Leader:
+Announcements:
+Benediction:
+
+These notes are only used when the corresponding Platform Team position is unassigned (for example, a guest speaker or guest prayer leader).
+
+SONG ASSUMPTIONS
+
+This report assumes every service contains either five or six songs.
+
+Five-song service
+1. Call to Worship
+2–3. Songs of Worship
+4. Song of Anticipation
+5. Song of Response
+
+Six-song service
+1. Call to Worship
+2–4. Songs of Worship
+5. Song of Anticipation
+6. Song of Response
+
+PLAN TEMPLATE REQUIREMENTS
+
+✓ Songs must be scheduled in service order.
+✓ Speak O Lord is always scheduled as the second-to-last song.
+✓ The final song is always the Song of Response.
+✓ Platform Team positions should be assigned whenever possible.
+✓ PLATFORM ROLES notes are intended only as a fallback.
+
+DESIGN PRINCIPLES
+
+1. Read data.
+2. Sanitize data.
+3. Apply business logic.
+4. Render HTML.
+
+No HTML should contain business logic beyond simple display checks.
 -->
-
-{% comment %}
-Extract key data from plan.
-{% endcomment %}
-
-{% assign scheduling_leads = "" %}
-{% assign anticipation_title = "" %}
-{% assign anticipation_arrangement = "" %}
-{% assign last_song_title = "" %}
-{% assign first_song_title = "" %}
-{% assign first_song_found = false %}
-
-{% comment %}
-Platform Position assignments
-{% endcomment %}
-
-{% assign worship_leader_position = "" %}
-{% assign missions_moment_position = "" %}
-{% assign prayer_leader_position = "" %}
-{% assign scripture_reader_position = "" %}
-{% assign preacher_position = "" %}
-{% assign communion_position = "" %}
-{% assign announcements_position = "" %}
-{% assign benediction_position = "" %}
-
-{% comment %}
-Platform Role values from PLATFORM ROLES notes
-{% endcomment %}
-
-{% assign worship_leader_notes = "" %}
-{% assign missions_moment_notes = "" %}
-{% assign prayer_leader_notes = "" %}
-{% assign scripture_reader_notes = "" %}
-{% assign preacher_notes = "" %}
-{% assign communion_notes = "" %}
-{% assign announcements_notes = "" %}
-{% assign benediction_notes = "" %}
-
-{% comment %}
-Flags indicating whether the role exists in the notes.
-These determine whether a section should exist at all.
-{% endcomment %}
-
-{% assign worship_leader_found = false %}
-{% assign missions_moment_found = false %}
-{% assign prayer_leader_found = false %}
-{% assign scripture_reader_found = false %}
-{% assign preacher_found = false %}
-{% assign communion_found = false %}
-{% assign announcements_found = false %}
-{% assign benediction_found = false %}
-
-{% comment %}
-Merged values used by the report.
-{% endcomment %}
-
-{% assign worship_leader_display = "" %}
-{% assign missions_moment_display = "" %}
-{% assign prayer_leader_display = "" %}
-{% assign scripture_reader_display = "" %}
-{% assign preacher_display = "" %}
-{% assign communion_display = "" %}
-{% assign announcements_display = "" %}
-{% assign benediction_display = "" %}
-
-{% comment %}
-Extract Platform Team assignments
-{% endcomment %}
-
-{% for plan_person in plan.plan_people_not_declined %}
-
-  {% assign person_name = plan_person.person.name %}
-  {% assign position_name = plan_person.position %}
-
-  {% case position_name %}
-
-    {% when "Worship Leader" %}
-      {% if worship_leader_position != "" %}
-        {% assign worship_leader_position = worship_leader_position | append: ", " %}
-      {% endif %}
-      {% assign worship_leader_position = worship_leader_position | append: person_name %}
-
-    {% when "Missions Moment" %}
-      {% if missions_moment_position != "" %}
-        {% assign missions_moment_position = missions_moment_position | append: ", " %}
-      {% endif %}
-      {% assign missions_moment_position = missions_moment_position | append: person_name %}
-
-    {% when "Prayer Leader" %}
-      {% if prayer_leader_position != "" %}
-        {% assign prayer_leader_position = prayer_leader_position | append: ", " %}
-      {% endif %}
-      {% assign prayer_leader_position = prayer_leader_position | append: person_name %}
-
-    {% when "Scripture Reader" %}
-      {% if scripture_reader_position != "" %}
-        {% assign scripture_reader_position = scripture_reader_position | append: ", " %}
-      {% endif %}
-      {% assign scripture_reader_position = scripture_reader_position | append: person_name %}
-
-    {% when "Preacher" %}
-      {% if preacher_position != "" %}
-        {% assign preacher_position = preacher_position | append: ", " %}
-      {% endif %}
-      {% assign preacher_position = preacher_position | append: person_name %}
-
-    {% when "Communion" %}
-      {% if communion_position != "" %}
-        {% assign communion_position = communion_position | append: ", " %}
-      {% endif %}
-      {% assign communion_position = communion_position | append: person_name %}
-
-    {% when "Announcements" %}
-      {% if announcements_position != "" %}
-        {% assign announcements_position = announcements_position | append: ", " %}
-      {% endif %}
-      {% assign announcements_position = announcements_position | append: person_name %}
-
-    {% when "Benediction" %}
-      {% if benediction_position != "" %}
-        {% assign benediction_position = benediction_position | append: ", " %}
-      {% endif %}
-      {% assign benediction_position = benediction_position | append: person_name %}
-
-  {% endcase %}
-
-{% endfor %}
-
-{% comment %}
-Extract platform roles from plan general note (PLATFORM ROLES:)
-Sanitize all note values immediately after extraction.
-{% endcomment %}
-
-{% for note in plan.notes %}
-  {% if note.category_name == "General" and note.note contains "PLATFORM ROLES:" %}
-
-    {% assign roles_text = note.note | split: "PLATFORM ROLES:" | last %}
-    {% assign role_lines = roles_text | split: "
-" %}
-
-    {% for line in role_lines %}
-
-      {% assign role_line = line | strip | replace: "\r", "" %}
-
-      {% if role_line contains ":" %}
-
-        {% assign role_title = role_line | split: ":" | first | strip %}
-        {% assign role_value = role_line | split: ":" | last | strip %}
-
-        {% comment %}
-        Normalize empty values
-        {% endcomment %}
-
-        {% if role_value == "TBD" or role_value == """" or role_value == "" %}
-          {% assign role_value = "" %}
-        {% endif %}
-
-        {% case role_title %}
-
-          {% when "Worship Leader" %}
-            {% assign worship_leader_found = true %}
-            {% assign worship_leader_notes = role_value %}
-
-          {% when "Missions Moment" %}
-            {% assign missions_moment_found = true %}
-            {% assign missions_moment_notes = role_value %}
-
-          {% when "Prayer Leader" %}
-            {% assign prayer_leader_found = true %}
-            {% assign prayer_leader_notes = role_value %}
-
-          {% when "Scripture Reader" %}
-            {% assign scripture_reader_found = true %}
-            {% assign scripture_reader_notes = role_value %}
-
-          {% when "Preacher" %}
-            {% assign preacher_found = true %}
-            {% assign preacher_notes = role_value %}
-
-          {% when "Communion" %}
-            {% assign communion_found = true %}
-            {% assign communion_notes = role_value %}
-
-          {% when "Announcements" %}
-            {% assign announcements_found = true %}
-            {% assign announcements_notes = role_value %}
-
-          {% when "Benediction" %}
-            {% assign benediction_found = true %}
-            {% assign benediction_notes = role_value %}
-
-        {% endcase %}
-
-      {% endif %}
-
-    {% endfor %}
-
-    {% break %}
-
-  {% endif %}
-{% endfor %}
-
-{% comment %}
-Merge Platform positions and PLATFORM ROLES notes.
-
-Rules:
-- Position only: use position
-- Notes only: use notes
-- Both match: use once
-- Both differ: show both
-- Both blank: omit
-{% endcomment %}
-
-{% assign role_pairs = "
-worship_leader,
-missions_moment,
-prayer_leader,
-scripture_reader,
-preacher,
-communion,
-announcements,
-benediction
-" %}
-
-
-{% comment %}
-Worship Leader
-{% endcomment %}
-
-{% if worship_leader_position != "" and worship_leader_notes != "" %}
-  {% if worship_leader_position == worship_leader_notes %}
-    {% assign worship_leader_display = worship_leader_position %}
-  {% else %}
-    {% assign worship_leader_display = worship_leader_position | append: ", " | append: worship_leader_notes %}
-  {% endif %}
-{% elsif worship_leader_position != "" %}
-  {% assign worship_leader_display = worship_leader_position %}
-{% elsif worship_leader_notes != "" %}
-  {% assign worship_leader_display = worship_leader_notes %}
-{% endif %}
-
-
-{% comment %}
-Missions Moment
-{% endcomment %}
-
-{% if missions_moment_position != "" and missions_moment_notes != "" %}
-  {% if missions_moment_position == missions_moment_notes %}
-    {% assign missions_moment_display = missions_moment_position %}
-  {% else %}
-    {% assign missions_moment_display = missions_moment_position | append: ", " | append: missions_moment_notes %}
-  {% endif %}
-{% elsif missions_moment_position != "" %}
-  {% assign missions_moment_display = missions_moment_position %}
-{% elsif missions_moment_notes != "" %}
-  {% assign missions_moment_display = missions_moment_notes %}
-{% endif %}
-
-
-{% comment %}
-Prayer Leader
-{% endcomment %}
-
-{% if prayer_leader_position != "" and prayer_leader_notes != "" %}
-  {% if prayer_leader_position == prayer_leader_notes %}
-    {% assign prayer_leader_display = prayer_leader_position %}
-  {% else %}
-    {% assign prayer_leader_display = prayer_leader_position | append: ", " | append: prayer_leader_notes %}
-  {% endif %}
-{% elsif prayer_leader_position != "" %}
-  {% assign prayer_leader_display = prayer_leader_position %}
-{% elsif prayer_leader_notes != "" %}
-  {% assign prayer_leader_display = prayer_leader_notes %}
-{% endif %}
-
-
-{% comment %}
-Scripture Reader
-{% endcomment %}
-
-{% if scripture_reader_position != "" and scripture_reader_notes != "" %}
-  {% if scripture_reader_position == scripture_reader_notes %}
-    {% assign scripture_reader_display = scripture_reader_position %}
-  {% else %}
-    {% assign scripture_reader_display = scripture_reader_position | append: ", " | append: scripture_reader_notes %}
-  {% endif %}
-{% elsif scripture_reader_position != "" %}
-  {% assign scripture_reader_display = scripture_reader_position %}
-{% elsif scripture_reader_notes != "" %}
-  {% assign scripture_reader_display = scripture_reader_notes %}
-{% endif %}
-
-
-{% comment %}
-Preacher
-{% endcomment %}
-
-{% if preacher_position != "" and preacher_notes != "" %}
-  {% if preacher_position == preacher_notes %}
-    {% assign preacher_display = preacher_position %}
-  {% else %}
-    {% assign preacher_display = preacher_position | append: ", " | append: preacher_notes %}
-  {% endif %}
-{% elsif preacher_position != "" %}
-  {% assign preacher_display = preacher_position %}
-{% elsif preacher_notes != "" %}
-  {% assign preacher_display = preacher_notes %}
-{% endif %}
-
-
-{% comment %}
-Communion
-{% endcomment %}
-
-{% if communion_position != "" and communion_notes != "" %}
-  {% if communion_position == communion_notes %}
-    {% assign communion_display = communion_position %}
-  {% else %}
-    {% assign communion_display = communion_position | append: ", " | append: communion_notes %}
-  {% endif %}
-{% elsif communion_position != "" %}
-  {% assign communion_display = communion_position %}
-{% elsif communion_notes != "" %}
-  {% assign communion_display = communion_notes %}
-{% endif %}
-
-
-{% comment %}
-Announcements
-{% endcomment %}
-
-{% if announcements_position != "" and announcements_notes != "" %}
-  {% if announcements_position == announcements_notes %}
-    {% assign announcements_display = announcements_position %}
-  {% else %}
-    {% assign announcements_display = announcements_position | append: ", " | append: announcements_notes %}
-  {% endif %}
-{% elsif announcements_position != "" %}
-  {% assign announcements_display = announcements_position %}
-{% elsif announcements_notes != "" %}
-  {% assign announcements_display = announcements_notes %}
-{% endif %}
-
-
-{% comment %}
-Benediction
-{% endcomment %}
-
-{% if benediction_position != "" and benediction_notes != "" %}
-  {% if benediction_position == benediction_notes %}
-    {% assign benediction_display = benediction_position %}
-  {% else %}
-    {% assign benediction_display = benediction_position | append: ", " | append: benediction_notes %}
-  {% endif %}
-{% elsif benediction_position != "" %}
-  {% assign benediction_display = benediction_position %}
-{% elsif benediction_notes != "" %}
-  {% assign benediction_display = benediction_notes %}
-{% endif %}
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order of Service</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: Calibri, Arial, sans-serif;
-        font-size: 11pt;
-        line-height: 1.5;
-        margin: 0.5in;
-        color: #000;
-      }
-
-      .page-title {
-        text-align: center;
-        font-size: 14pt;
-        font-weight: bold;
-        margin-bottom: 1.25rem;
-      }
-
-      .service-section {
-        margin-top: 0.75rem;
-        margin-bottom: 0.75rem;
-      }
-
-      .section-heading {
-        font-weight: normal;
-      }
-
-      .song-title {
-        margin-left: 2.5rem;
-        font-style: italic;
-      }
-
-      .subnote {
-        margin-left: 2.5rem;
-        font-size: 0.95rem;
-        color: #333;
-      }
-
-      .service-notes {
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid #ccc;
-      }
-
-      @media print {
-        body {
-          margin: 0.5in;
-        }
-        .service-section {
-          page-break-inside: avoid;
-        }
-        .song-title {
-          page-break-inside: avoid;
-        }
-      }
-    </style>
-</head>
-<body>
-
-    <div class="page-title">
-      Order of Service • {% if plan.plan_times.size > 0 %}{{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}{% endif %}
-    </div>
-
-    <div class="service-section section-heading">
-      Prelude • Call to Worship • Recorded Music
-    </div>
-
-    <div class="service-section section-heading">
-      Worship in Singing • Worship Team
-    </div>
-
-    {% if first_song_title %}
-      <div class="song-title">{{ first_song_title }}</div>
-    {% endif %}
-
-<div class="service-section section-heading">
-  {% if worship_leader_display %}
-    Welcome to Worship • {{ worship_leader_display }}
-  {% else %}
-    Welcome to Worship •
-  {% endif %}
-</div>
-
-    <div class="subnote">
-      (Theme/Greeting)
-    </div>
-
-    <div class="service-section section-heading">
-      Songs of Worship • Worship Team
-    </div>
-
-    {% assign worship_song_count = 0 %}
-    {% for item in plan.items %}
-      {% if item.song or item.arrangement %}
-        {% assign worship_song_count = worship_song_count | plus: 1 %}
-        
-        {% comment %}
-        Display songs that are:
-        - Not the first song (worship_song_count > 1)
-        - Not the Song of Anticipation
-        - Not the last song (Song of Response)
-        {% endcomment %}
-        {% if worship_song_count > 1 and item.title != anticipation_title and item.title != last_song_title %}
-          <div class="song-title">{{ item.title }}</div>
-        {% endif %}
-      {% endif %}
-    {% endfor %}
-
-  {% if missions_moment_display %}
-  <div class="service-section section-heading">
-    Worship in Mission's Moment • {{ missions_moment_display }}
-  </div>
-{% endif %}
-
-   {% if prayer_leader_display %}
-  <div class="service-section section-heading">
-    Prayer for the Church/Offering • {{ prayer_leader_display }}
-  </div>
-{% endif %}
-
-    <div class="service-section section-heading">
-      Song of Anticipation • Worship Team
-    </div>
-
-    {% if anticipation_title %}
-      <div class="song-title">
-        {{ anticipation_title }}
-        {% if anticipation_arrangement %}
-          , {{ anticipation_arrangement }}
-        {% endif %}
-      </div>
-    {% endif %}
-
-    {% if preacher_display %}
-  <div class="service-section section-heading">
-    Message: "" • {{ preacher_display }}
-  </div>
-{% endif %}
-
-   {% if communion_display %}
-  <div class="service-section section-heading">
-    Communion • {{ communion_display }}
-  </div>
-{% endif %}
-
-    <div class="service-section section-heading">
-      Song of Response • Worship Team
-    </div>
-
-    {% if last_song_title %}
-      <div class="song-title">{{ last_song_title }}</div>
-    {% endif %}
-
-   {% if announcements_display or benediction_display %}
-
-  {% assign announcement_title = "" %}
-
-  {% if announcements_display %}
-    {% assign announcement_title = "Announcements" %}
-  {% endif %}
-
-  {% if benediction_display %}
-    {% if announcement_title != "" %}
-      {% assign announcement_title = announcement_title | append: "/Benediction" %}
-    {% else %}
-      {% assign announcement_title = "Benediction" %}
-    {% endif %}
-  {% endif %}
-
-  {% assign announcement_names = "" %}
-
-  {% if announcements_display and benediction_display %}
-    {% if announcements_display == benediction_display %}
-      {% assign announcement_names = announcements_display %}
-    {% else %}
-      {% assign announcement_names = announcements_display | append: ", " | append: benediction_display %}
-    {% endif %}
-  {% elsif announcements_display %}
-    {% assign announcement_names = announcements_display %}
-  {% else %}
-    {% assign announcement_names = benediction_display %}
-  {% endif %}
-
-  <div class="service-section section-heading">
-    {{ announcement_title }} • {{ announcement_names }}
-  </div>
-
-{% endif %}
-
-    <div class="service-notes section-heading">
-      Service Notes:
-    </div>
-
-  </body>
-</html>
