@@ -1,37 +1,13 @@
 <!--
 LBAC Order of Service Report
-Version 2.3
-
-CURRENTLY DYNAMIC
-- Service Date
-- Worship Leader
-- Song Titles
-- Song of Anticipation Arrangement Name
-- Platform Roles (Preacher, Prayer Leader, Announcements, Benediction, Mission's Moment, Communion Elder)
-
-CURRENTLY HARD CODED
-- Theme/Greeting
-- Service Notes
-
-PLATFORM ROLES FORMAT (add to Platform Team general note):
-PLATFORM ROLES:
-Preacher: Chris Lankford
-Prayer Leader: TBD
-Communion Elder: ""
-Announcements: Hank McWatters
-Benediction: Hank McWatters
-Mission's Moment: 
-
-IMPORTANT DISTINCTION:
-- If a role title is NOT in the notes, that section won't appear in the output (the role isn't happening that week)
-- If a role title IS in the notes but value is blank, TBD, or "", the section displays with "" to show it needs to be filled
+Version 3.0
 -->
 
 {% comment %}
 Extract key data from plan.
 {% endcomment %}
 
-{% assign worship_leader = "" %}
+{% assign scheduling_leads = "" %}
 {% assign anticipation_title = "" %}
 {% assign anticipation_arrangement = "" %}
 {% assign last_song_title = "" %}
@@ -39,145 +15,352 @@ Extract key data from plan.
 {% assign first_song_found = false %}
 
 {% comment %}
-Initialize platform roles
-Flags indicate whether the role was found in the notes at all
+Platform Position assignments
 {% endcomment %}
-{% assign preacher = "" %}
-{% assign preacher_found = false %}
-{% assign prayer_leader = "" %}
-{% assign prayer_leader_found = false %}
-{% assign communion_elder = "" %}
-{% assign communion_elder_found = false %}
-{% assign announcements = "" %}
-{% assign announcements_found = false %}
-{% assign benediction = "" %}
-{% assign benediction_found = false %}
-{% assign missions_moment = "" %}
+
+{% assign worship_leader_position = "" %}
+{% assign missions_moment_position = "" %}
+{% assign prayer_leader_position = "" %}
+{% assign scripture_reader_position = "" %}
+{% assign preacher_position = "" %}
+{% assign communion_position = "" %}
+{% assign announcements_position = "" %}
+{% assign benediction_position = "" %}
+
+{% comment %}
+Platform Role values from PLATFORM ROLES notes
+{% endcomment %}
+
+{% assign worship_leader_notes = "" %}
+{% assign missions_moment_notes = "" %}
+{% assign prayer_leader_notes = "" %}
+{% assign scripture_reader_notes = "" %}
+{% assign preacher_notes = "" %}
+{% assign communion_notes = "" %}
+{% assign announcements_notes = "" %}
+{% assign benediction_notes = "" %}
+
+{% comment %}
+Flags indicating whether the role exists in the notes.
+These determine whether a section should exist at all.
+{% endcomment %}
+
+{% assign worship_leader_found = false %}
 {% assign missions_moment_found = false %}
+{% assign prayer_leader_found = false %}
+{% assign scripture_reader_found = false %}
+{% assign preacher_found = false %}
+{% assign communion_found = false %}
+{% assign announcements_found = false %}
+{% assign benediction_found = false %}
+
+{% comment %}
+Merged values used by the report.
+{% endcomment %}
+
+{% assign worship_leader_display = "" %}
+{% assign missions_moment_display = "" %}
+{% assign prayer_leader_display = "" %}
+{% assign scripture_reader_display = "" %}
+{% assign preacher_display = "" %}
+{% assign communion_display = "" %}
+{% assign announcements_display = "" %}
+{% assign benediction_display = "" %}
+
+{% comment %}
+Extract Platform Team assignments
+{% endcomment %}
 
 {% for plan_person in plan.plan_people_not_declined %}
-  {% if plan_person.position == "Worship Leader" %}
-    {% assign worship_leader = plan_person.person.name %}
-    {% break %}
-  {% endif %}
+
+  {% assign person_name = plan_person.person.name %}
+  {% assign position_name = plan_person.position %}
+
+  {% case position_name %}
+
+    {% when "Worship Leader" %}
+      {% if worship_leader_position != "" %}
+        {% assign worship_leader_position = worship_leader_position | append: ", " %}
+      {% endif %}
+      {% assign worship_leader_position = worship_leader_position | append: person_name %}
+
+    {% when "Missions Moment" %}
+      {% if missions_moment_position != "" %}
+        {% assign missions_moment_position = missions_moment_position | append: ", " %}
+      {% endif %}
+      {% assign missions_moment_position = missions_moment_position | append: person_name %}
+
+    {% when "Prayer Leader" %}
+      {% if prayer_leader_position != "" %}
+        {% assign prayer_leader_position = prayer_leader_position | append: ", " %}
+      {% endif %}
+      {% assign prayer_leader_position = prayer_leader_position | append: person_name %}
+
+    {% when "Scripture Reader" %}
+      {% if scripture_reader_position != "" %}
+        {% assign scripture_reader_position = scripture_reader_position | append: ", " %}
+      {% endif %}
+      {% assign scripture_reader_position = scripture_reader_position | append: person_name %}
+
+    {% when "Preacher" %}
+      {% if preacher_position != "" %}
+        {% assign preacher_position = preacher_position | append: ", " %}
+      {% endif %}
+      {% assign preacher_position = preacher_position | append: person_name %}
+
+    {% when "Communion" %}
+      {% if communion_position != "" %}
+        {% assign communion_position = communion_position | append: ", " %}
+      {% endif %}
+      {% assign communion_position = communion_position | append: person_name %}
+
+    {% when "Announcements" %}
+      {% if announcements_position != "" %}
+        {% assign announcements_position = announcements_position | append: ", " %}
+      {% endif %}
+      {% assign announcements_position = announcements_position | append: person_name %}
+
+    {% when "Benediction" %}
+      {% if benediction_position != "" %}
+        {% assign benediction_position = benediction_position | append: ", " %}
+      {% endif %}
+      {% assign benediction_position = benediction_position | append: person_name %}
+
+  {% endcase %}
+
 {% endfor %}
 
 {% comment %}
 Extract platform roles from plan general note (PLATFORM ROLES:)
+Sanitize all note values immediately after extraction.
 {% endcomment %}
+
 {% for note in plan.notes %}
- {% if note.category_name == "General" and note.note contains "PLATFORM ROLES:" %}
- {% assign roles_text = note.note %}
-      
-      {% comment %}
-      Extract Preacher
-      {% endcomment %}
-      {% if roles_text contains "Preacher:" %}
-        {% assign preacher_found = true %}
-        {% assign preacher_raw = roles_text | split: "Preacher:" | last | split: "
-" | first | strip %}
-        {% if preacher_raw == "TBD" or preacher_raw == """" or preacher_raw == "" %}
-          {% assign preacher = '""' %}
-        {% else %}
-          {% assign preacher = preacher_raw %}
+  {% if note.category_name == "General" and note.note contains "PLATFORM ROLES:" %}
+
+    {% assign roles_text = note.note | split: "PLATFORM ROLES:" | last %}
+    {% assign role_lines = roles_text | split: "
+" %}
+
+    {% for line in role_lines %}
+
+      {% assign role_line = line | strip | replace: "\r", "" %}
+
+      {% if role_line contains ":" %}
+
+        {% assign role_title = role_line | split: ":" | first | strip %}
+        {% assign role_value = role_line | split: ":" | last | strip %}
+
+        {% comment %}
+        Normalize empty values
+        {% endcomment %}
+
+        {% if role_value == "TBD" or role_value == """" or role_value == "" %}
+          {% assign role_value = "" %}
         {% endif %}
+
+        {% case role_title %}
+
+          {% when "Worship Leader" %}
+            {% assign worship_leader_found = true %}
+            {% assign worship_leader_notes = role_value %}
+
+          {% when "Missions Moment" %}
+            {% assign missions_moment_found = true %}
+            {% assign missions_moment_notes = role_value %}
+
+          {% when "Prayer Leader" %}
+            {% assign prayer_leader_found = true %}
+            {% assign prayer_leader_notes = role_value %}
+
+          {% when "Scripture Reader" %}
+            {% assign scripture_reader_found = true %}
+            {% assign scripture_reader_notes = role_value %}
+
+          {% when "Preacher" %}
+            {% assign preacher_found = true %}
+            {% assign preacher_notes = role_value %}
+
+          {% when "Communion" %}
+            {% assign communion_found = true %}
+            {% assign communion_notes = role_value %}
+
+          {% when "Announcements" %}
+            {% assign announcements_found = true %}
+            {% assign announcements_notes = role_value %}
+
+          {% when "Benediction" %}
+            {% assign benediction_found = true %}
+            {% assign benediction_notes = role_value %}
+
+        {% endcase %}
+
       {% endif %}
-      
-      {% comment %}
-      Extract Prayer Leader
-      {% endcomment %}
-      {% if roles_text contains "Prayer Leader:" %}
-        {% assign prayer_leader_found = true %}
-        {% assign prayer_raw = roles_text | split: "Prayer Leader:" | last | split: "
-" | first | strip %}
-        {% if prayer_raw == "TBD" or prayer_raw == """" or prayer_raw == "" %}
-          {% assign prayer_leader = '""' %}
-        {% else %}
-          {% assign prayer_leader = prayer_raw %}
-        {% endif %}
-      {% endif %}
-      
-      {% comment %}
-      Extract Communion Elder
-      {% endcomment %}
-      {% if roles_text contains "Communion Elder:" %}
-        {% assign communion_elder_found = true %}
-        {% assign communion_raw = roles_text | split: "Communion Elder:" | last | split: "
-" | first | strip %}
-        {% if communion_raw == "TBD" or communion_raw == """" or communion_raw == "" %}
-          {% assign communion_elder = '""' %}
-        {% else %}
-          {% assign communion_elder = communion_raw %}
-        {% endif %}
-      {% endif %}
-      
-      {% comment %}
-      Extract Announcements
-      {% endcomment %}
-      {% if roles_text contains "Announcements:" %}
-        {% assign announcements_found = true %}
-        {% assign ann_raw = roles_text | split: "Announcements:" | last | split: "Benediction:" | first | strip | replace: "
-", "" %}
-        {% if ann_raw == "TBD" or ann_raw == """" or ann_raw == "" %}
-          {% assign announcements = '""' %}
-        {% else %}
-          {% assign announcements = ann_raw %}
-        {% endif %}
-      {% endif %}
-      
-      {% comment %}
-      Extract Benediction
-      {% endcomment %}
-      {% if roles_text contains "Benediction:" %}
-        {% assign benediction_found = true %}
-        {% assign benediction_raw = roles_text | split: "Benediction:" | last | split: "Mission's Moment:" | first | strip | replace: "
-", "" %}
-        {% if benediction_raw == "TBD" or benediction_raw == """" or benediction_raw == "" %}
-          {% assign benediction = '""' %}
-        {% else %}
-          {% assign benediction = benediction_raw %}
-        {% endif %}
-      {% endif %}
-      
-      {% comment %}
-      Extract Mission's Moment
-      {% endcomment %}
-      {% if roles_text contains "Mission's Moment:" %}
-        {% assign missions_moment_found = true %}
-        {% assign mission_raw = roles_text | split: "Mission's Moment:" | last | split: "
-" | first | strip %}
-        {% if mission_raw == "TBD" or mission_raw == """" or mission_raw == "" %}
-          {% assign missions_moment = '""' %}
-        {% else %}
-          {% assign missions_moment = mission_raw %}
-        {% endif %}
-      {% endif %}
-      
-      {% break %}
-    {% endif %}
+
+    {% endfor %}
+
+    {% break %}
+
+  {% endif %}
 {% endfor %}
 
 {% comment %}
-Extract song data
+Merge Platform positions and PLATFORM ROLES notes.
+
+Rules:
+- Position only: use position
+- Notes only: use notes
+- Both match: use once
+- Both differ: show both
+- Both blank: omit
 {% endcomment %}
-{% for item in plan.items %}
-    {% if item.song or item.arrangement %}
-      
-      {% if first_song_found == false %}
-        {% assign first_song_title = item.title %}
-        {% assign first_song_found = true %}
-      {% endif %}
-      
-      {% if item.description contains "Song of Anticipation" %}
-        {% assign anticipation_title = item.title %}
-        {% if item.arrangement %}
-          {% assign anticipation_arrangement = item.arrangement.name %}
-        {% endif %}
-      {% endif %}
-      
-      {% assign last_song_title = item.title %}
-    {% endif %}
-{% endfor %}
+
+{% assign role_pairs = "
+worship_leader,
+missions_moment,
+prayer_leader,
+scripture_reader,
+preacher,
+communion,
+announcements,
+benediction
+" %}
+
+
+{% comment %}
+Worship Leader
+{% endcomment %}
+
+{% if worship_leader_position != "" and worship_leader_notes != "" %}
+  {% if worship_leader_position == worship_leader_notes %}
+    {% assign worship_leader_display = worship_leader_position %}
+  {% else %}
+    {% assign worship_leader_display = worship_leader_position | append: ", " | append: worship_leader_notes %}
+  {% endif %}
+{% elsif worship_leader_position != "" %}
+  {% assign worship_leader_display = worship_leader_position %}
+{% elsif worship_leader_notes != "" %}
+  {% assign worship_leader_display = worship_leader_notes %}
+{% endif %}
+
+
+{% comment %}
+Missions Moment
+{% endcomment %}
+
+{% if missions_moment_position != "" and missions_moment_notes != "" %}
+  {% if missions_moment_position == missions_moment_notes %}
+    {% assign missions_moment_display = missions_moment_position %}
+  {% else %}
+    {% assign missions_moment_display = missions_moment_position | append: ", " | append: missions_moment_notes %}
+  {% endif %}
+{% elsif missions_moment_position != "" %}
+  {% assign missions_moment_display = missions_moment_position %}
+{% elsif missions_moment_notes != "" %}
+  {% assign missions_moment_display = missions_moment_notes %}
+{% endif %}
+
+
+{% comment %}
+Prayer Leader
+{% endcomment %}
+
+{% if prayer_leader_position != "" and prayer_leader_notes != "" %}
+  {% if prayer_leader_position == prayer_leader_notes %}
+    {% assign prayer_leader_display = prayer_leader_position %}
+  {% else %}
+    {% assign prayer_leader_display = prayer_leader_position | append: ", " | append: prayer_leader_notes %}
+  {% endif %}
+{% elsif prayer_leader_position != "" %}
+  {% assign prayer_leader_display = prayer_leader_position %}
+{% elsif prayer_leader_notes != "" %}
+  {% assign prayer_leader_display = prayer_leader_notes %}
+{% endif %}
+
+
+{% comment %}
+Scripture Reader
+{% endcomment %}
+
+{% if scripture_reader_position != "" and scripture_reader_notes != "" %}
+  {% if scripture_reader_position == scripture_reader_notes %}
+    {% assign scripture_reader_display = scripture_reader_position %}
+  {% else %}
+    {% assign scripture_reader_display = scripture_reader_position | append: ", " | append: scripture_reader_notes %}
+  {% endif %}
+{% elsif scripture_reader_position != "" %}
+  {% assign scripture_reader_display = scripture_reader_position %}
+{% elsif scripture_reader_notes != "" %}
+  {% assign scripture_reader_display = scripture_reader_notes %}
+{% endif %}
+
+
+{% comment %}
+Preacher
+{% endcomment %}
+
+{% if preacher_position != "" and preacher_notes != "" %}
+  {% if preacher_position == preacher_notes %}
+    {% assign preacher_display = preacher_position %}
+  {% else %}
+    {% assign preacher_display = preacher_position | append: ", " | append: preacher_notes %}
+  {% endif %}
+{% elsif preacher_position != "" %}
+  {% assign preacher_display = preacher_position %}
+{% elsif preacher_notes != "" %}
+  {% assign preacher_display = preacher_notes %}
+{% endif %}
+
+
+{% comment %}
+Communion
+{% endcomment %}
+
+{% if communion_position != "" and communion_notes != "" %}
+  {% if communion_position == communion_notes %}
+    {% assign communion_display = communion_position %}
+  {% else %}
+    {% assign communion_display = communion_position | append: ", " | append: communion_notes %}
+  {% endif %}
+{% elsif communion_position != "" %}
+  {% assign communion_display = communion_position %}
+{% elsif communion_notes != "" %}
+  {% assign communion_display = communion_notes %}
+{% endif %}
+
+
+{% comment %}
+Announcements
+{% endcomment %}
+
+{% if announcements_position != "" and announcements_notes != "" %}
+  {% if announcements_position == announcements_notes %}
+    {% assign announcements_display = announcements_position %}
+  {% else %}
+    {% assign announcements_display = announcements_position | append: ", " | append: announcements_notes %}
+  {% endif %}
+{% elsif announcements_position != "" %}
+  {% assign announcements_display = announcements_position %}
+{% elsif announcements_notes != "" %}
+  {% assign announcements_display = announcements_notes %}
+{% endif %}
+
+
+{% comment %}
+Benediction
+{% endcomment %}
+
+{% if benediction_position != "" and benediction_notes != "" %}
+  {% if benediction_position == benediction_notes %}
+    {% assign benediction_display = benediction_position %}
+  {% else %}
+    {% assign benediction_display = benediction_position | append: ", " | append: benediction_notes %}
+  {% endif %}
+{% elsif benediction_position != "" %}
+  {% assign benediction_display = benediction_position %}
+{% elsif benediction_notes != "" %}
+  {% assign benediction_display = benediction_notes %}
+{% endif %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -264,13 +447,13 @@ Extract song data
       <div class="song-title">{{ first_song_title }}</div>
     {% endif %}
 
-    <div class="service-section section-heading">
-      {% if worship_leader %}
-        Welcome to Worship • {{ worship_leader }}
-      {% else %}
-        Welcome to Worship •
-      {% endif %}
-    </div>
+<div class="service-section section-heading">
+  {% if worship_leader_display %}
+    Welcome to Worship • {{ worship_leader_display }}
+  {% else %}
+    Welcome to Worship •
+  {% endif %}
+</div>
 
     <div class="subnote">
       (Theme/Greeting)
@@ -297,23 +480,17 @@ Extract song data
       {% endif %}
     {% endfor %}
 
-    {% comment %}
-    Display Mission's Moment section only if found in notes
-    {% endcomment %}
-    {% if missions_moment_found %}
-      <div class="service-section section-heading">
-        Worship in Mission's Moment • {{ missions_moment }}
-      </div>
-    {% endif %}
+  {% if missions_moment_display %}
+  <div class="service-section section-heading">
+    Worship in Mission's Moment • {{ missions_moment_display }}
+  </div>
+{% endif %}
 
-    {% comment %}
-    Display Prayer for the Church/Offering section only if found in notes
-    {% endcomment %}
-    {% if prayer_leader_found %}
-      <div class="service-section section-heading">
-        Prayer for the Church/Offering • {{ prayer_leader }}
-      </div>
-    {% endif %}
+   {% if prayer_leader_display %}
+  <div class="service-section section-heading">
+    Prayer for the Church/Offering • {{ prayer_leader_display }}
+  </div>
+{% endif %}
 
     <div class="service-section section-heading">
       Song of Anticipation • Worship Team
@@ -328,23 +505,17 @@ Extract song data
       </div>
     {% endif %}
 
-    {% comment %}
-    Display Message section only if found in notes
-    {% endcomment %}
-    {% if preacher_found %}
-      <div class="service-section section-heading">
-        Message: "" • {{ preacher }}
-      </div>
-    {% endif %}
+    {% if preacher_display %}
+  <div class="service-section section-heading">
+    Message: "" • {{ preacher_display }}
+  </div>
+{% endif %}
 
-    {% comment %}
-    Display Communion Elder section only if found in notes
-    {% endcomment %}
-    {% if communion_elder_found %}
-      <div class="service-section section-heading">
-        Communion Elder • {{ communion_elder }}
-      </div>
-    {% endif %}
+   {% if communion_display %}
+  <div class="service-section section-heading">
+    Communion • {{ communion_display }}
+  </div>
+{% endif %}
 
     <div class="service-section section-heading">
       Song of Response • Worship Team
@@ -354,24 +525,41 @@ Extract song data
       <div class="song-title">{{ last_song_title }}</div>
     {% endif %}
 
-    {% comment %}
-    Display Announcements/Benediction section only if at least one is found in notes
-    {% endcomment %}
-    {% if announcements_found or benediction_found %}
-      <div class="service-section section-heading">
-        {% if announcements_found and benediction_found %}
-          {% if announcements | strip == benediction | strip %}
-            Announcements/Benediction • {{ announcements }}
-          {% else %}
-            Announcements/Benediction • {{ announcements | strip }}, {{ benediction | strip }}
-          {% endif %}
-        {% elsif announcements_found %}
-          Announcements • {{ announcements }}
-        {% elsif benediction_found %}
-          Benediction • {{ benediction }}
-        {% endif %}
-      </div>
+   {% if announcements_display or benediction_display %}
+
+  {% assign announcement_title = "" %}
+
+  {% if announcements_display %}
+    {% assign announcement_title = "Announcements" %}
+  {% endif %}
+
+  {% if benediction_display %}
+    {% if announcement_title != "" %}
+      {% assign announcement_title = announcement_title | append: "/Benediction" %}
+    {% else %}
+      {% assign announcement_title = "Benediction" %}
     {% endif %}
+  {% endif %}
+
+  {% assign announcement_names = "" %}
+
+  {% if announcements_display and benediction_display %}
+    {% if announcements_display == benediction_display %}
+      {% assign announcement_names = announcements_display %}
+    {% else %}
+      {% assign announcement_names = announcements_display | append: ", " | append: benediction_display %}
+    {% endif %}
+  {% elsif announcements_display %}
+    {% assign announcement_names = announcements_display %}
+  {% else %}
+    {% assign announcement_names = benediction_display %}
+  {% endif %}
+
+  <div class="service-section section-heading">
+    {{ announcement_title }} • {{ announcement_names }}
+  </div>
+
+{% endif %}
 
     <div class="service-notes section-heading">
       Service Notes:
