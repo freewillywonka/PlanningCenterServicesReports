@@ -1,5 +1,5 @@
 <--LBAC Order of Service Report
-Version 4.0
+Version 4.1
 
 PURPOSE
 - Generate a one-page Order of Service from a Planning Center Services plan.
@@ -74,3 +74,169 @@ DESIGN PRINCIPLES
 
 No HTML should contain business logic beyond simple display checks.
 -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order of Service</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Calibri, Arial, sans-serif;
+        font-size: 11pt;
+        line-height: 1.5;
+        margin: 0.5in;
+        color: #000;
+      }
+
+      .page-title {
+        text-align: center;
+        font-size: 14pt;
+        font-weight: bold;
+        margin-bottom: 1.25rem;
+      }
+
+      .service-section {
+        margin-top: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .section-heading {
+        font-weight: normal;
+      }
+
+      .song-title {
+        margin-left: 2.5rem;
+        font-style: italic;
+      }
+
+      .subnote {
+        margin-left: 2.5rem;
+        font-size: 0.95rem;
+        color: #333;
+      }
+
+      .service-notes {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ccc;
+      }
+
+      @media print {
+        body {
+          margin: 0.5in;
+        }
+        .service-section {
+          page-break-inside: avoid;
+        }
+        .song-title {
+          page-break-inside: avoid;
+        }
+      }
+    </style>
+</head>
+<body>
+
+<div class="page-title">
+  Order of Service • {{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}
+</div>
+
+<div class="service-section section-heading">
+  Prelude • Call to Worship • Recorded Music
+</div>
+
+<div class="service-section section-heading">
+  Worship in Singing • Worship Team
+</div>
+
+<div class="song-title">{{ song_1 }}</div>
+
+<div class="service-section section-heading">
+  Welcome to Worship • {{ worship_leader }}
+</div>
+
+<div class="subnote">
+  (Theme/Greeting)
+</div>
+
+<div class="service-section section-heading">
+  Songs of Worship • Worship Team
+</div>
+
+{% for song in worship_songs %}
+  <div class="song-title">{{ song.title }}</div>
+{% endfor %}
+
+{% if prayer_leader %}
+<div class="service-section section-heading">
+  Prayer for the Church/Offering • {{ prayer_leader }}
+</div>
+{% endif %}
+
+<div class="service-section section-heading">
+  Song of Anticipation • Worship Team
+</div>
+
+<div class="song-title">
+  Speak O Lord{% if anticipation_arrangement %}, {{ anticipation_arrangement }}{% endif %}
+</div>
+
+{% if preacher %}
+<div class="service-section section-heading">
+  Message: "{{ plan.plan_title }}" • {{ preacher }}
+</div>
+{% endif %}
+
+{% if communion %}
+<div class="service-section section-heading">
+  Communion • {{ communion }}
+</div>
+{% endif %}
+
+<div class="service-section section-heading">
+  Song of Response • Worship Team
+</div>
+
+<div class="song-title">{{ response_song }}</div>
+
+{% if announcements or benediction %}
+<div class="service-section section-heading">
+  {% assign title = "" %}
+  {% assign names = "" %}
+
+  {% if announcements %}
+    {% assign title = "Announcements" %}
+    {% assign names = announcements %}
+  {% endif %}
+
+  {% if benediction %}
+    {% if title != "" %}
+      {% assign title = title | append: "/Benediction" %}
+    {% else %}
+      {% assign title = "Benediction" %}
+    {% endif %}
+
+    {% if names == "" %}
+      {% assign names = benediction %}
+    {% elsif names != benediction %}
+      {% assign names = names | append: ", " | append: benediction %}
+    {% endif %}
+  {% endif %}
+
+  {{ title }} • {{ names }}
+</div>
+{% endif %}
+
+<div class="service-notes section-heading">
+  Service Notes:
+</div>
+  </body>
+</html>
