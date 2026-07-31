@@ -1,0 +1,620 @@
+<!--
+LBAC Order of Service Report
+Version 7.4
+
+Changes:
+- Platform sections now use category_with_positions
+- Shows planned needs (Needed > 0)
+- Keeps filled positions visible (Quantity > 0)
+- Hides unused positions (Needed = 0 and Quantity = 0)
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Order of Service</title>
+
+<style>
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Chopin, Calibri, Arial, sans-serif;
+  font-size: 14pt;
+  font-weight: bold;
+  line-height: 1.35;
+  margin: 0.5in;
+  color: #000;
+}
+
+.page-title {
+  text-align: center;
+  font-size: 22pt;
+  font-style: italic;
+  font-weight: bold;
+  margin-bottom: 1.25rem;
+}
+
+.service-section {
+  margin-top: 0.8rem;
+  margin-bottom: 0.05rem;
+  page-break-inside: avoid;
+}
+
+.section-header {
+  page-break-inside: avoid;
+}
+
+.song-title {
+  margin-left: 2.5rem;
+  padding-left: 0.5rem;
+  font-size: 14pt;
+  font-weight: bold;
+  font-style: italic;
+  margin-top: 0;
+  margin-bottom: 0.05rem;
+}
+
+.pre-service {
+  color: rgb(192,0,0);
+}
+
+.service-notes {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ccc;
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<div class="page-title">
+  Order of Service •
+  {% if plan.plan_times.size > 0 %}
+    {{ plan.plan_times.first.starts_at | date: "%B %-d, %Y" }}
+  {% endif %}
+</div>
+
+
+<div class="service-section pre-service">
+  <div class="section-header">
+    Prelude • Call to Worship • Recorded Music
+  </div>
+</div>
+
+
+
+{% assign regular_song_count = 0 %}
+
+{% for item in plan.items %}
+
+  {% if item.item_type == "Song" %}
+
+    {% unless item.song.themes contains "Song of Anticipation" %}
+      {% assign regular_song_count = regular_song_count | plus: 1 %}
+    {% endunless %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+
+{% assign first_song_done = false %}
+
+{% for item in plan.items %}
+
+  {% if item.item_type == "Song" %}
+
+    {% unless item.song.themes contains "Song of Anticipation" %}
+
+      {% unless first_song_done %}
+
+<div class="service-section">
+
+  <div class="section-header">
+    Worship in Singing • Worship Team
+  </div>
+
+  <div class="song-title">
+    {{ item.title }}
+  </div>
+
+</div>
+
+        {% assign first_song_done = true %}
+
+      {% endunless %}
+
+    {% endunless %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+
+{% comment %}
+Theme/Greeting Platform position
+{% endcomment %}
+
+{% assign theme_exists = false %}
+
+{% for category in category_with_positions %}
+
+  {% if category.name == "Platform" %}
+
+    {% for position in category.positions %}
+
+      {% if position.name == "Theme/Greeting" %}
+
+        {% if position.needed > 0 or position.quantity > 0 %}
+          {% assign theme_exists = true %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+{% if theme_exists %}
+
+<div class="service-section">
+
+  <div class="section-header">
+    Welcome to Worship • Theme/Greeting •
+
+    {% assign first_theme_person = true %}
+
+    {% for person in plan.plan_people %}
+
+      {% if person.team.name == "Platform"
+        and person.position == "Theme/Greeting" %}
+
+        {% unless first_theme_person %}
+          ,
+        {% endunless %}
+
+        {{ person.person.name }}
+
+        {% assign first_theme_person = false %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+
+</div>
+
+{% endif %}
+{% comment %}
+Songs of Worship
+{% endcomment %}
+
+{% assign song_number = 0 %}
+{% assign songs_header_rendered = false %}
+
+{% for item in plan.items %}
+
+  {% if item.item_type == "Song" %}
+
+    {% unless item.song.themes contains "Song of Anticipation" %}
+
+      {% assign song_number = song_number | plus: 1 %}
+
+      {% if song_number > 1 and song_number < regular_song_count %}
+
+        {% unless songs_header_rendered %}
+
+<div class="service-section">
+  <div class="section-header">
+    Songs of Worship • Worship Team
+  </div>
+</div>
+
+          {% assign songs_header_rendered = true %}
+
+        {% endunless %}
+
+<div class="song-title">
+  {{ item.title }}
+</div>
+
+      {% endif %}
+
+    {% endunless %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+
+{% comment %}
+Worship in Mission's Moment
+{% endcomment %}
+
+{% assign mission_exists = false %}
+
+{% for category in category_with_positions %}
+
+  {% if category.name == "Platform" %}
+
+    {% for position in category.positions %}
+
+      {% if position.name == "Worship in Mission’s Moment" %}
+
+        {% if position.needed > 0 or position.quantity > 0 %}
+          {% assign mission_exists = true %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+{% if mission_exists %}
+
+<div class="service-section">
+  <div class="section-header">
+    Worship in Mission’s Moment •
+
+    {% assign first_mission_person = true %}
+
+    {% for person in plan.plan_people %}
+
+      {% if person.team.name == "Platform"
+        and person.position == "Worship in Mission’s Moment" %}
+
+        {% unless first_mission_person %}
+          ,
+        {% endunless %}
+
+        {{ person.person.name }}
+
+        {% assign first_mission_person = false %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+</div>
+
+{% endif %}
+
+
+
+{% comment %}
+Prayer for the Church/Offering
+{% endcomment %}
+
+{% assign prayer_exists = false %}
+
+{% for category in category_with_positions %}
+
+  {% if category.name == "Platform" %}
+
+    {% for position in category.positions %}
+
+      {% if position.name == "Prayer for the Church/Offering" %}
+
+        {% if position.needed > 0 or position.quantity > 0 %}
+          {% assign prayer_exists = true %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+{% if prayer_exists %}
+
+<div class="service-section">
+  <div class="section-header">
+    Prayer for the Church/Offering •
+
+    {% assign first_prayer_person = true %}
+
+    {% for person in plan.plan_people %}
+
+      {% if person.team.name == "Platform"
+        and person.position == "Prayer for the Church/Offering" %}
+
+        {% unless first_prayer_person %}
+          ,
+        {% endunless %}
+
+        {{ person.person.name }}
+
+        {% assign first_prayer_person = false %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+</div>
+
+{% endif %}
+
+
+
+{% comment %}
+Song of Anticipation
+{% endcomment %}
+
+{% for item in plan.items %}
+
+  {% if item.item_type == "Song"
+    and item.song.themes contains "Song of Anticipation" %}
+
+<div class="service-section">
+
+  <div class="section-header">
+    Song of Anticipation • Worship Team
+  </div>
+
+  <div class="song-title">
+    {{ item.title }}
+    {% if item.arrangement %}
+      , {{ item.arrangement.name }}
+    {% endif %}
+  </div>
+
+</div>
+
+  {% endif %}
+
+{% endfor %}
+
+
+
+{% comment %}
+Message
+{% endcomment %}
+
+{% assign message_exists = false %}
+
+{% for category in category_with_positions %}
+
+  {% if category.name == "Platform" %}
+
+    {% for position in category.positions %}
+
+      {% if position.name == "Message" %}
+
+        {% if position.needed > 0 or position.quantity > 0 %}
+          {% assign message_exists = true %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+{% if message_exists %}
+
+<div class="service-section">
+  <div class="section-header">
+
+    Message: "{{ plan.plan_title | default: plan.title }}" •
+
+    {% assign first_message_person = true %}
+
+    {% for person in plan.plan_people %}
+
+      {% if person.team.name == "Platform"
+        and person.position == "Message" %}
+
+        {% unless first_message_person %}
+          ,
+        {% endunless %}
+
+        {{ person.person.name }}
+
+        {% assign first_message_person = false %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+</div>
+
+{% endif %}
+
+
+
+{% comment %}
+Communion
+{% endcomment %}
+
+{% assign communion_exists = false %}
+
+{% for category in category_with_positions %}
+
+  {% if category.name == "Platform" %}
+
+    {% for position in category.positions %}
+
+      {% if position.name == "Communion" %}
+
+        {% if position.needed > 0 or position.quantity > 0 %}
+          {% assign communion_exists = true %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+{% if communion_exists %}
+
+<div class="service-section">
+  <div class="section-header">
+
+    Communion • Recorded Music •
+
+    {% assign first_communion_person = true %}
+
+    {% for person in plan.plan_people %}
+
+      {% if person.team.name == "Platform"
+        and person.position == "Communion" %}
+
+        {% unless first_communion_person %}
+          ,
+        {% endunless %}
+
+        {{ person.person.name }}
+
+        {% assign first_communion_person = false %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+</div>
+
+{% endif %}
+{% comment %}
+Song of Response
+{% endcomment %}
+
+{% assign response_song = "" %}
+
+{% for item in plan.items %}
+
+  {% if item.item_type == "Song" %}
+
+    {% unless item.song.themes contains "Song of Anticipation" %}
+
+      {% assign response_song = item.title %}
+
+    {% endunless %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+{% if response_song != blank %}
+
+<div class="service-section">
+
+  <div class="section-header">
+    Song of Response • Worship Team
+  </div>
+
+  <div class="song-title">
+    {{ response_song }}
+  </div>
+
+</div>
+
+{% endif %}
+
+
+
+{% comment %}
+Announcements/Benediction
+{% endcomment %}
+
+{% assign announcement_exists = false %}
+
+{% for category in category_with_positions %}
+
+  {% if category.name == "Platform" %}
+
+    {% for position in category.positions %}
+
+      {% if position.name == "Announcements/Benediction" %}
+
+        {% if position.needed > 0 or position.quantity > 0 %}
+          {% assign announcement_exists = true %}
+        {% endif %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  {% endif %}
+
+{% endfor %}
+
+
+{% if announcement_exists %}
+
+<div class="service-section">
+  <div class="section-header">
+
+    Announcements/Benediction •
+
+    {% assign first_announcement_person = true %}
+
+    {% for person in plan.plan_people %}
+
+      {% if person.team.name == "Platform"
+        and person.position == "Announcements/Benediction" %}
+
+        {% unless first_announcement_person %}
+          ,
+        {% endunless %}
+
+        {{ person.person.name }}
+
+        {% assign first_announcement_person = false %}
+
+      {% endif %}
+
+    {% endfor %}
+
+  </div>
+</div>
+
+{% endif %}
+
+
+
+<div class="service-notes">
+  Service Notes:
+</div>
+
+
+</body>
+</html>
